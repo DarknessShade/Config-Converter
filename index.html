@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ویرایشگر و مبدل کانفیگ - Windows 98 Edition</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <style>
+        /* --- Desktop Color Palette & OS Variables --- */
+        :root {
+            --desktop-bg: #008080; 
+            --win-face: #d4d0c8;
+            --win-shadow: #808080;
+            --win-highlight: #ffffff;
+            --win-dark-shadow: #404040;
+            --win-text: #000000;
+            --win-window-bg: #ffffff;
+            --win-blue-start: #000080;
+            --win-blue-end: #1084d0;
+            --win-text-disabled: #808080;
+            --win-active-title-text: #ffffff;
+        }
+
+        body.light-theme {
+            --desktop-bg: #4a3b5c;
+            --win-face: #000000;
+            --win-shadow: #808080;
+            --win-highlight: #00ff00;
+            --win-dark-shadow: #ffffff;
+            --win-text: #00ff00;
+            --win-window-bg: #000000;
+            --win-blue-start: #00ff00;
+            --win-blue-end: #008000;
+            --win-text-disabled: #808080;
+            --win-active-title-text: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            image-rendering: pixelated;
+        }
+
+        body {
+            background-color: var(--desktop-bg);
+            color: var(--win-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px 10px;
+            overflow-y: scroll;
+        }
+
+        /* --- Desktop Icons & Shortcuts --- */
+        .desktop-shortcuts {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+            flex-wrap: wrap;
+        }
+
+        .shortcut {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 105px;
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+        }
+
+        .shortcut img {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 4px;
+        }
+
+        .shortcut span {
+            color: #ffffff;
+            font-size: 11px;
+            padding: 2px 4px;
+            display: inline-block;
+            text-shadow: 1px 1px 1px #000000;
+            border: 1px solid transparent;
+        }
+
+        .shortcut.active span {
+            background-color: var(--win-blue-start);
+            border: 1px dotted var(--win-highlight);
+            text-shadow: none;
+            color: var(--win-active-title-text);
+        }
+
+        /* --- Windows 98 Core UI Components --- */
+        .container {
+            background: var(--win-face);
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 1px 1px 0px 0px var(--win-dark-shadow), 
+                        -1px -1px 0px 0px var(--win-highlight) inset, 
+                        1px 1px 0px 0px var(--win-shadow) inset, 
+                        2px 2px 5px rgba(0,0,0,0.5);
+            padding: 3px;
+            border-top: 1.5px solid var(--win-highlight);
+            border-left: 1.5px solid var(--win-highlight);
+            border-right: 1.5px solid var(--win-dark-shadow);
+            border-bottom: 1.5px solid var(--win-dark-shadow);
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, var(--win-blue-start), var(--win-blue-end));
+            padding: 3px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--win-active-title-text);
+            font-weight: bold;
+        }
+
+        html[dir="rtl"] .title-bar {
+            flex-direction: row-reverse;
+        }
+
+        .title-bar-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .title-bar-controls {
+            display: flex;
+            gap: 2px;
+        }
+
+        html[dir="rtl"] .title-bar-controls {
+            flex-direction: row-reverse;
+        }
+
+        .title-bar-controls button {
+            width: 16px;
+            height: 14px;
+            background: var(--win-face);
+            border-top: 1px solid var(--win-highlight);
+            border-left: 1px solid var(--win-highlight);
+            border-right: 1px solid var(--win-dark-shadow);
+            border-bottom: 1px solid var(--win-dark-shadow);
+            box-shadow: inset 1px 1px 0px var(--win-highlight);
+            cursor: pointer;
+            font-size: 9px;
+            font-weight: bold;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .title-bar-controls button:active {
+            border-top: 1px solid var(--win-dark-shadow);
+            border-left: 1px solid var(--win-dark-shadow);
+            border-right: 1px solid var(--win-highlight);
+            border-bottom: 1px solid var(--win-highlight);
+            box-shadow: none;
+            padding-top: 1px;
+            padding-left: 1px;
+        }
+
+        .menu-bar {
+            display: flex;
+            gap: 12px;
+            padding: 4px 6px;
+            border-bottom: 1px solid var(--win-shadow);
+            background: var(--win-face);
+        }
+
+        html[dir="rtl"] .menu-bar {
+            flex-direction: row-reverse;
+        }
+
+        .menu-item {
+            cursor: pointer;
+            padding: 2px 6px;
+            user-select: none;
+        }
+
+        .menu-item:hover {
+            background: var(--win-blue-start);
+            color: var(--win-active-title-text);
+        }
+
+        .window-body {
+            padding: 12px;
+        }
+
+        .group-box {
+            border-top: 1.5px solid var(--win-shadow);
+            border-left: 1.5px solid var(--win-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            padding: 14px;
+            margin-bottom: 12px;
+            position: relative;
+            background: var(--win-face);
+        }
+
+        .group-box-title {
+            position: absolute;
+            top: -9px;
+            background: var(--win-face);
+            padding: 0 6px;
+            font-weight: bold;
+        }
+
+        html[dir="rtl"] .group-box-title {
+            right: 12px;
+        }
+
+        html[dir="ltr"] .group-box-title {
+            left: 12px;
+        }
+
+        .label-with-icon {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: var(--win-text);
+        }
+
+        .win98-link {
+            color: #0000ee;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        
+        .win98-link:visited {
+            color: #551a8b;
+        }
+
+        body.light-theme .win98-link {
+            color: #00ff00;
+        }
+
+        textarea, input[type="text"], select {
+            width: 100%;
+            background: var(--win-window-bg);
+            color: var(--win-text);
+            border-top: 1.5px solid var(--win-shadow);
+            border-left: 1.5px solid var(--win-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            box-shadow: inset 1px 1px 0px var(--win-dark-shadow);
+            padding: 4px;
+            font-family: monospace, 'Vazirmatn';
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            direction: ltr;
+        }
+
+        #mainInput, #confInput, #yamlOutput, #proton_confInput, #proton_yamlOutput {
+            height: 120px;
+        }
+
+        #overrideIP {
+            height: 60px;
+            resize: none;
+        }
+
+        input[type="text"] {
+            height: 24px;
+        }
+
+        .win98-btn {
+            background: var(--win-face);
+            color: var(--win-text);
+            border-top: 1.5px solid var(--win-highlight);
+            border-left: 1.5px solid var(--win-highlight);
+            border-right: 1.5px solid var(--win-dark-shadow);
+            border-bottom: 1.5px solid var(--win-dark-shadow);
+            box-shadow: inset 1px 1px 0px var(--win-highlight);
+            padding: 4px 14px;
+            cursor: pointer;
+            font-weight: normal;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            outline: none;
+            user-select: none;
+        }
+
+        .win98-btn:active {
+            border-top: 1.5px solid var(--win-dark-shadow);
+            border-left: 1.5px solid var(--win-dark-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            box-shadow: none;
+            padding-top: 5px;
+            padding-left: 15px;
+            padding-bottom: 3px;
+            padding-right: 13px;
+        }
+
+        .win98-radio {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .win98-radio input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--win-window-bg);
+            border-top: 1px solid var(--win-shadow);
+            border-left: 1px solid var(--win-shadow);
+            border-right: 1px solid var(--win-highlight);
+            border-bottom: 1px solid var(--win-highlight);
+            box-shadow: inset 1px 1px 0px var(--win-dark-shadow);
+            border-radius: 50%;
+            outline: none;
+            position: relative;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .win98-radio input[type="radio"]:checked::after {
+            content: "";
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--win-text);
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+        }
+
+        .sub-fetcher {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-fetch {
+            white-space: nowrap;
+        }
+
+        .editor-actions-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .ip-port-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            align-items: stretch;
+        }
+
+        .ip-port-row .ip-col {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ip-port-row .port-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ip-port-row textarea {
+            flex-grow: 1;
+        }
+
+        .btn-main {
+            width: 100%;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            height: 32px;
+        }
+
+        .win98-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .win98-checkbox input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 13px;
+            height: 13px;
+            background: var(--win-window-bg);
+            border-top: 1.5px solid var(--win-shadow);
+            border-left: 1.5px solid var(--win-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            box-shadow: inset 1px 1px 0px var(--win-dark-shadow);
+            outline: none;
+            position: relative;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .win98-checkbox input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--win-text);
+            top: -2px;
+            left: 1px;
+        }
+
+        .win98-tabs {
+            display: flex;
+            border-bottom: 1.5px solid var(--win-shadow);
+            padding-right: 6px;
+            margin-bottom: 10px;
+            gap: 2px;
+        }
+
+        html[dir="rtl"] .win98-tabs {
+            flex-direction: row-reverse;
+        }
+
+        .win98-tab {
+            background: var(--win-face);
+            color: var(--win-text);
+            border-top: 1.5px solid var(--win-highlight);
+            border-left: 1.5px solid var(--win-highlight);
+            border-right: 1.5px solid var(--win-shadow);
+            border-bottom: none;
+            padding: 4px 10px;
+            cursor: pointer;
+            outline: none;
+            position: relative;
+            bottom: -1px;
+            z-index: 1;
+        }
+
+        .win98-tab.active {
+            font-weight: bold;
+            border-bottom: 1.5px solid var(--win-face);
+            padding-top: 5px;
+            bottom: -2px;
+            z-index: 2;
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .stat-field {
+            background: var(--win-face);
+            border-top: 1px solid var(--win-shadow);
+            border-left: 1px solid var(--win-shadow);
+            border-right: 1px solid var(--win-highlight);
+            border-bottom: 1px solid var(--win-highlight);
+            padding: 2px 6px;
+            font-size: 11px;
+            display: inline-block;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px ridge var(--win-highlight);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        html[dir="rtl"] .results-header {
+            flex-direction: column-reverse;
+        }
+
+        .results-title {
+            font-weight: bold;
+        }
+
+        .config-card {
+            background: var(--win-face);
+            border: 1px solid var(--win-shadow);
+            padding: 8px;
+            margin-bottom: 8px;
+            box-shadow: inset 1px 1px 0px var(--win-highlight);
+        }
+
+        .config-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        html[dir="rtl"] .config-card-header {
+            flex-direction: row-reverse;
+        }
+
+        .config-name {
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 60%;
+        }
+
+        .config-link {
+            font-family: monospace;
+            background: var(--win-window-bg);
+            color: var(--win-text);
+            border-top: 1px solid var(--win-shadow);
+            border-left: 1px solid var(--win-shadow);
+            border-right: 1px solid var(--win-highlight);
+            border-bottom: 1px solid var(--win-highlight);
+            padding: 4px;
+            font-size: 11px;
+            word-break: break-all;
+            max-height: 80px;
+            overflow-y: auto;
+            text-align: left;
+            direction: ltr;
+        }
+
+        .qr-wrapper {
+            display: none;
+            background: #ffffff;
+            border: 1px solid #000;
+            padding: 4px;
+            margin-top: 6px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .profile-img {
+            display: block;
+            margin: 12px auto;
+            width: 50px; 
+            height: 50px;
+            border: 2px solid var(--win-shadow);
+            box-shadow: 1px 1px 0px var(--win-highlight);
+        }
+
+        .spinner {
+            display: none;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--win-shadow);
+            border-radius: 50%;
+            border-top-color: var(--win-text);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #msgBoxOverlay, #helpBoxOverlay, #v2rayHelpOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.1);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-box {
+            width: 300px;
+            background: var(--win-face);
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .message-box .window-body {
+            text-align: center;
+            padding: 16px;
+        }
+
+        .message-box-buttons {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .footer {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: var(--win-text);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .wg-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .custom-file-upload {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #domainModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.15);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .results-header { flex-direction: column; gap: 8px; }
+            .ip-port-row { flex-direction: column; gap: 4px; }
+            .wg-columns { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="desktop-shortcuts">
+        <div class="shortcut active" id="v2rayShortcut" onclick="selectShortcut('v2ray', this)">
+            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/v2ray%20win98.png" alt="v2ray">
+            <span>v2ray Convertor</span>
+        </div>
+        <div class="shortcut" id="wireguardShortcut" onclick="selectShortcut('wireguard', this)">
+            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/wirgurad%20win98.png" alt="wireguard">
+            <span>wirgurad converter</span>
+        </div>
+        <div class="shortcut" id="protonShortcut" onclick="selectShortcut('proton', this)">
+            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/proton%20win98.png" alt="proton">
+            <span>proton converter</span>
+        </div>
+        <div class="shortcut" id="helpShortcut" onclick="openHelp()">
+            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/pas%20win98.png" alt="help">
+            <span>ÐΛɌ₭ᑎΞ𐒡𐒡</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="title-bar">
+            <div class="title-bar-text" id="appTitle" data-i18n="title">✨ مبدل پیشرفته پروتکل‌های V2Ray</div>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize" onclick="showToast('Minimize Action')">_</button>
+                <button aria-label="Maximize" onclick="showToast('Maximize Action')">⛶</button>
+                <button aria-label="Close" onclick="showToast('Application Closed')">✕</button>
+            </div>
+        </div>
+
+        <div class="menu-bar">
+            <div class="menu-item" onclick="toggleLanguage()">Language: <span id="langText">EN</span></div>
+            <div class="menu-item" onclick="toggleTheme()" id="btnThemeToggle">Theme Mode</div>
+            <div class="menu-item" onclick="resetAllSystems()" data-i18n="menuReset">ریست کلی</div>
+            <div class="menu-item" id="menuHelpLink" onclick="openV2rayHelp()" data-i18n="menuHelp">Help</div>
+        </div>
+        
+        <div class="window-body">
+            
+            <div id="v2rayView">
+                <div class="group-box">
+                    <span class="group-box-title" data-i18n="subLabel">دریافت مستقیم از لینک سابسکریپشن:</span>
+                    <div class="sub-fetcher">
+                        <input type="text" id="subUrlInput" placeholder="https://example.com/sub/link" style="direction: ltr;">
+                        <button class="win98-btn btn-fetch" onclick="fetchSubscription()">
+                            <div class="spinner" id="fetchSpinner"></div>
+                            <span id="fetchBtnText" data-i18n="fetchBtn">دریافت آنلاین</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="group-box">
+                    <span class="group-box-title" data-i18n="mainLabel">اطلاعات ورودی (متن خام، کد یا Base64):</span>
+                    <textarea id="mainInput" data-i18n-placeholder="mainPlaceholder" placeholder="پشتیبانی از: vless:// , trojan:// , vmess:// , ss://&#10;یا کد JSON یا رشته Base64 سابسکریپشن"></textarea>
+                    
+                    <div class="editor-actions-row">
+                        <button type="button" class="win98-btn" onclick="pasteFromClipboard()" id="btnPasteTooltip">جایگذاری</button>
+                        <button type="button" class="win98-btn" onclick="clearMainInput()" id="btnClearTooltip">پاک کردن</button>
+                    </div>
+                </div>
+
+                <div class="group-box">
+                    <span class="group-box-title" data-i18n="editTitle">تنظیمات ویرایش و ادغام (اختیاری)</span>
+                    
+                    <div class="ip-port-row">
+                        <div class="ip-col">
+                            <span class="label-with-icon" data-i18n="ipLabel">آی‌پی یا دامنه‌های جدید (هرکدام در یک خط):</span>
+                            <textarea id="overrideIP" data-i18n-placeholder="ipPlaceholder" placeholder="مثال:&#10;clean1.ip.com&#10;104.21.12.3" style="direction: ltr;"></textarea>
+                        </div>
+                        <div class="port-col">
+                            <span class="label-with-icon" data-i18n="portLabel">پورت جدید:</span>
+                            <input type="text" id="overridePort" data-i18n-placeholder="portPlaceholder" placeholder="443" style="direction: ltr;">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 10px;">
+                        <span class="label-with-icon" data-i18n="nameLabel">نام کانفیگ دلخواه (برای جایگزینی نام‌های اصلی):</span>
+                        <input type="text" id="customName" data-i18n-placeholder="namePlaceholder" placeholder="مثال: 🚀 VIP Node">
+                    </div>
+
+                    <label class="win98-checkbox">
+                        <input type="checkbox" id="base64OutputOpt">
+                        <span data-i18n="base64OptLabel">خروجی کلی فایل به صورت فشرده (Base64)</span>
+                    </label>
+                </div>
+
+                <button class="win98-btn btn-main" onclick="processAllInputs()">
+                    <span data-i18n="convertBtn">تبدیل و اعمال تغییرات</span>
+                </button>
+            </div>
+
+            <div id="wireguardView" class="hidden">
+                <div class="wg-columns">
+                    <div>
+                        <div class="group-box" style="height: calc(100% - 10px);">
+                            <span class="group-box-title" data-i18n="section_configuration">پیکربندی فایل ورودی</span>
+                            
+                            <label for="wgFiles" class="win98-btn custom-file-upload">
+                                <span data-i18n="select_files">انتخاب فایل‌های .conf</span>
+                            </label>
+                            <input type="file" id="wgFiles" accept=".conf" multiple style="display:none;">
+
+                            <textarea id="confInput" class="win98-input" style="height: 150px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder"></textarea>
+
+                            <div class="action-btns" style="display:flex; gap:8px; margin-bottom:10px;">
+                                <button onclick="convertWireguard()" class="win98-btn" style="flex:1; font-weight:bold;">
+                                    <span data-i18n="convert">تبدیل کانفیگ</span>
+                                </button>
+                                <button type="button" id="clearWgBtn" onclick="handleClearWg()" class="win98-btn" style="width:80px;">
+                                    <span data-i18n="clear">پاک کردن</span>
+                                </button>
+                            </div>
+
+                            <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
+                            
+                            <div class="button-container" style="display:flex; gap:8px;">
+                                <button class="win98-btn hidden" id="downloadBtn" style="flex:1;">
+                                    <span data-i18n="download">دانلود کانفیگ</span>
+                                </button>
+                                <button class="win98-btn hidden" id="copyBtn" style="flex:1;">
+                                    <span data-i18n="copy">کپی خروجی</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="group-box">
+                            <span class="group-box-title" data-i18n="output_format">فرمت خروجی تبدیل</span>
+                            <div style="display:flex; flex-direction:column;">
+                                <label class="win98-radio">
+                                    <input type="radio" id="clash" name="option" checked onclick="handleWgOptionChange('clash')">
+                                    <span>Clash / Meta</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="awg" name="option" onclick="handleWgOptionChange('awg')">
+                                    <span>AmneziaWG / WG Tunnel</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="wiresocket" name="option" onclick="handleWgOptionChange('wiresocket')">
+                                    <span>Wiresock</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="group-box" id="musor1">
+                            <span class="group-box-title" data-i18n="junk_packet_settings">تنظیمات پکت‌های هرز (Junk Packets)</span>
+                            
+                            <label class="win98-checkbox" id="amnezia15-toggle-label" style="margin-bottom:8px;">
+                                <input type="checkbox" id="enableAmnezia15" onchange="toggleAmnezia15()">
+                                <span data-i18n="enable_15">فعال‌سازی نسخه آمونیا ۱.۵ (Amnezia 1.5)</span>
+                            </label>
+
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+                                <label class="win98-radio">
+                                    <input type="radio" id="junk1" name="junk" checked>
+                                    <span data-i18n="light_option">سبک (jc=3, jmin=1, jmax=3)</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="junk2" name="junk">
+                                    <span data-i18n="heavy_option">سنگین (jc=5, jmin=10, jmax=40)</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="junk3" name="junk" onchange="handleJunkRadioChange()">
+                                    <span data-i18n="custom_settings">تنظیمات سفارشی</span>
+                                </label>
+                            </div>
+
+                            <div id="standard-junk-inputs" style="padding: 8px; border: 1px inset #fff; margin-bottom: 8px;">
+                                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
+                                    <div>jc: <input type="text" id="jc1" placeholder="3" style="width:40px;"></div>
+                                    <div>jmin: <input type="text" id="jmin1" placeholder="1" style="width:40px;"></div>
+                                    <div>jmax: <input type="text" id="jmax1" placeholder="3" style="width:40px;"></div>
+                                </div>
+                                <button class="win98-btn" id="randomJunkBtn" onclick="handleRandomJunk()" style="width:100%;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
+                            </div>
+
+                            <div id="amnezia15-inputs" class="hidden" style="padding: 8px; border: 1px inset #fff;">
+                                <span style="font-weight:bold; display:block; margin-bottom:4px;" data-i18n="amnezia_params">پارامترهای آمونیا ۱.۵</span>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                                    <div>I1: <input type="text" id="i1_1" style="width:50px;"></div>
+                                    <div>I2: <input type="text" id="i2_1" style="width:50px;"></div>
+                                    <div>I3: <input type="text" id="i3_1" style="width:50px;"></div>
+                                    <div>I4: <input type="text" id="i4_1" style="width:50px;"></div>
+                                    <div>I5: <input type="text" id="i5_1" style="width:50px;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group-box hidden" id="musor2">
+                            <span class="group-box-title">Wiresock Settings</span>
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+                                <label class="win98-radio">
+                                    <input type="radio" id="ws_junk1" name="ws_junk" checked>
+                                    <span data-i18n="light_option">سبک (jc=3, jmin=1, jmax=3)</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="ws_junk2" name="ws_junk">
+                                    <span data-i18n="heavy_option">سنگین (jc=5, jmin=10, jmax=40)</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="ws_junk3" name="ws_junk">
+                                    <span data-i18n="custom_settings">تنظیمات سفارشی</span>
+                                </label>
+                            </div>
+
+                            <div style="padding: 8px; border: 1px inset #fff; margin-bottom:8px;">
+                                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
+                                    <div>jc: <input type="text" id="ws_jc1" style="width:40px;"></div>
+                                    <div>jmin: <input type="text" id="ws_jmin1" style="width:40px;"></div>
+                                    <div>jmax: <input type="text" id="ws_jmax1" style="width:40px;"></div>
+                                </div>
+                                <button class="win98-btn" onclick="handleRandomWiresocket()" style="width:100%;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
+                            </div>
+
+                            <div style="padding: 8px; border: 1px inset #fff;">
+                                <span style="font-weight:bold; display:block; margin-bottom:4px;" data-i18n="wiresock_params">پارامترهای Wiresock</span>
+                                <div style="margin-bottom:4px;">Id: <input type="text" id="ws_id" placeholder="Domain"></div>
+                                <div style="margin-bottom:4px;">Ip: 
+                                    <select id="ws_ip">
+                                        <option value="QUIC">QUIC</option>
+                                        <option value="DNS">DNS</option>
+                                    </select>
+                                </div>
+                                <div>Ib: 
+                                    <select id="ws_ib">
+                                        <option value="Chrome">Chrome</option>
+                                        <option value="Firefox">Firefox</option>
+                                        <option value="cURL">cURL</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group-box" style="margin-top:10px; padding: 10px; text-align:center;">
+                    <div id="fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
+                </div>
+            </div>
+
+            <div id="protonView" class="hidden">
+                <div class="wg-columns">
+                    <div>
+                        <div class="group-box" style="height: calc(100% - 10px);">
+                            <span class="group-box-title" data-i18n="section_configuration">پیکربندی فایل ورودی</span>
+                            
+                            <label for="proton_wgFiles" class="win98-btn custom-file-upload">
+                                <span data-i18n="select_files">انتخاب فایل‌های .conf</span>
+                            </label>
+                            <input type="file" id="proton_wgFiles" accept=".conf" multiple style="display:none;">
+
+                            <textarea id="proton_confInput" class="win98-input" style="height: 120px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder" readonly></textarea>
+
+                            <div class="action-btns" style="display:flex; gap:8px; margin-bottom:10px;">
+                                <button onclick="convertProton()" class="win98-btn" style="flex:1; font-weight:bold;">
+                                    <span data-i18n="convert">تبدیل کانفیگ</span>
+                                </button>
+                                <button type="button" onclick="handleClearProton()" class="win98-btn" style="width:80px;">
+                                    <span data-i18n="clear">پاک کردن</span>
+                                </button>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; padding:8px; border:1px inset #fff;">
+                                <label class="win98-checkbox" style="margin-top:0;">
+                                    <input type="checkbox" id="proton_awg15" checked onchange="toggleProtonAWG15Containers()">
+                                    <span data-i18n="proton_awg15">AWG 1.5</span>
+                                </label>
+                                <label class="win98-checkbox" style="margin-top:0;">
+                                    <input type="checkbox" id="proton_nojunk" onchange="toggleProtonJunkContainer()">
+                                    <span data-i18n="proton_nojunk">Без мусора (بدون پکت هرز)</span>
+                                </label>
+                                <label class="win98-checkbox" style="margin-top:0;">
+                                    <input type="checkbox" id="proton_nolan" onchange="convertProton()">
+                                    <span data-i18n="proton_nolan">Исключить LAN (مسدودسازی شبکه‌ی محلی)</span>
+                                </label>
+                            </div>
+
+                            <textarea id="proton_yamlOutput" class="win98-input" style="height:120px; margin-bottom:10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." readonly></textarea>
+                            
+                            <div class="button-container" style="display:flex; gap:8px;">
+                                <button class="win98-btn hidden" id="proton_downloadBtn" style="flex:1;">
+                                    <span data-i18n="download">دانلود کانفیگ</span>
+                                </button>
+                                <button class="win98-btn hidden" id="proton_copyBtn" style="flex:1;">
+                                    <span data-i18n="copy">کپی خروجی</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="group-box">
+                            <span class="group-box-title" data-i18n="output_format">فرمت خروجی تبدیل</span>
+                            <div style="display:flex; flex-direction:column;">
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_awg_radio" name="proton_option" checked onchange="toggleProtonAWG15Containers()">
+                                    <span>AmneziaWG</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_karing_radio" name="proton_option" onchange="toggleProtonAWG15Containers()">
+                                    <span>WireSock</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_clash_radio" name="proton_option" onchange="toggleProtonAWG15Containers()">
+                                    <span>Clash / Meta</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="group-box" id="proton_junk_container">
+                            <span class="group-box-title" data-i18n="junk_packet_settings">پکت‌های هرز</span>
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_junk1" name="proton_junk" checked onchange="convertProton()">
+                                    <span>jc = 3, jmin = 1, jmax = 3</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_junk2" name="proton_junk" onchange="convertProton()">
+                                    <span>jc = 30, jmin = 10, jmax = 30</span>
+                                </label>
+                                <label class="win98-radio">
+                                    <input type="radio" id="proton_junk3" name="proton_junk" onchange="convertProton()">
+                                    <span data-i18n="custom_settings">تنظیمات سفارشی</span>
+                                </label>
+                            </div>
+                            <div style="padding: 6px; border: 1px inset #fff; margin-bottom: 6px;">
+                                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:6px;">
+                                    <div>jc: <input type="text" id="proton_jc1" placeholder="128" style="width:36px;"></div>
+                                    <div>jmin: <input type="text" id="proton_jmin1" placeholder="1279" style="width:36px;"></div>
+                                    <div>jmax: <input type="text" id="proton_jmax1" placeholder="1280" style="width:36px;"></div>
+                                </div>
+                                <button class="win98-btn" style="width:100%;" onclick="protonRandomJunk()" data-i18n="generate_random">تصادفی</button>
+                            </div>
+                        </div>
+
+                        <div class="group-box hidden" id="proton_awg15_container">
+                            <span class="group-box-title" data-i18n="amnezia_params">پارامترهای AWG 1.5</span>
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
+                                <div>I1: <textarea id="proton_i1" style="height:22px; font-size:10px;"></textarea></div>
+                                <div>I2: <textarea id="proton_i2" style="height:22px; font-size:10px;"></textarea></div>
+                                <div>I3: <textarea id="proton_i3" style="height:22px; font-size:10px;"></textarea></div>
+                                <div>I4: <textarea id="proton_i4" style="height:22px; font-size:10px;"></textarea></div>
+                                <div>I5: <textarea id="proton_i5" style="height:22px; font-size:10px;"></textarea></div>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button class="win98-btn" style="flex:1;" onclick="protonRandomAWG15()">تصادفی</button>
+                                <button class="win98-btn" style="flex:1;" onclick="openDomainModal()">تولید کلید</button>
+                            </div>
+                        </div>
+
+                        <div class="group-box hidden" id="proton_wiresock_container">
+                            <span class="group-box-title" data-i18n="wiresock_params">پارامترهای Wiresock</span>
+                            <div style="margin-bottom:6px;">Id: <input type="text" id="proton_id" placeholder="ozon.ru"></div>
+                            <div style="margin-bottom:6px;">Ip: 
+                                <select id="proton_ip">
+                                    <option value="quic" selected>QUIC</option>
+                                    <option value="dns">DNS</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom:6px;">Ib: 
+                                <select id="proton_ib">
+                                    <option value="chrome">Chrome</option>
+                                    <option value="firefox">Firefox</option>
+                                    <option value="curl" selected>cURL</option>
+                                </select>
+                            </div>
+                            <button class="win98-btn" style="width:100%;" onclick="protonRandomWiresock()">تصادفی</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group-box" style="margin-top:10px; padding: 10px; text-align:center;">
+                    <div id="proton_fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                <div class="win98-tabs" id="filterButtonsContainer"></div>
+                <div class="stats-grid" id="statsContainer"></div>
+
+                <div class="results-header">
+                    <span class="results-title" id="resultsCount">
+                        <span data-i18n="resultsTitle">تعداد کانفیگ پردازش شده:</span> 0
+                    </span>
+                    <button class="win98-btn" id="btnCopyAllAction" onclick="copyAll()">
+                        <span data-i18n="copyAllBtn">کپی همه کانفیگ‌ها</span>
+                    </button>
+                </div>
+                
+                <div id="configsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">ÐΛɌ₭ᑎΞ𐒡𐒡🗽𓄂𓆃 | Win98 System Active</div>
+
+    <div id="msgBoxOverlay">
+        <div class="container message-box">
+            <div class="title-bar">
+                <div class="title-bar-text">System Message</div>
+                <div class="title-bar-controls">
+                    <button onclick="closeToast()">✕</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <p id="toastMessage">پیام سیستم</p>
+                <div class="message-box-buttons">
+                    <button class="win98-btn" style="min-width: 60px;" onclick="closeToast()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="domainModal">
+        <div class="container message-box" style="width:340px;">
+            <div class="title-bar">
+                <div class="title-bar-text">Domain Input</div>
+                <div class="title-bar-controls">
+                    <button onclick="closeDomainModal()">✕</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <p style="font-weight:bold; margin-bottom:8px;" data-i18n="proton_domain_prompt">لطفاً دامنه‌ای برای تولید I1 وارد کنید:</p>
+                <input type="text" id="proton_domain_input" placeholder="example.com" style="direction:ltr; margin-bottom:12px;">
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <button class="win98-btn" style="min-width:70px;" onclick="confirmDomainModal()">OK</button>
+                    <button class="win98-btn" style="min-width:70px;" onclick="closeDomainModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpBoxOverlay">
+        <div class="container" style="max-width: 440px; background: var(--win-face);">
+            <div class="title-bar">
+                <div class="title-bar-text" data-i18n="helpTitle">ارتباط با ما</div>
+                <div class="title-bar-controls">
+                    <button onclick="closeHelp()">✕</button>
+                </div>
+            </div>
+            <div class="window-body" id="helpBoxBody" style="text-align: justify; line-height: 1.6;">
+                <div class="group-box" style="margin-bottom: 12px; padding: 10px;">
+                    <span class="group-box-title" data-i18n="helpLinksTitle">شبکه‌های ارتباطی</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                        <div>• تلگرام آزادی: <a href="https://t.me/Paradise_Of_Freedom" target="_blank" class="win98-link">Paradise_Of_Freedom</a></div>
+                        <div>• تلگرام کانفیگ: <a href="https://t.me/ConfigWireguard" target="_blank" class="win98-link">ConfigWireguard</a></div>
+                        <div>• توییتر (X): <a href="https://x.com/mansor427" target="_blank" class="win98-link">mansor427</a></div>
+                        <div>• گیت‌هاب: <a href="https://github.com/DarknessShade" target="_blank" class="win98-link">DarknessShade</a></div>
+                    </div>
+                </div>
+
+                <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Darkness.png" alt="Darkness" class="profile-img">
+
+                <p style="text-align: center; margin-top: 10px; font-weight: bold;">
+                    <a href="https://github.com/DarknessShade" target="_blank" class="win98-link" style="font-size: 13px;">ÐΛɌ₭ᑎΞ𐒡𐒡</a>
+                </p>
+
+                <div class="message-box-buttons" style="margin-top: 12px;">
+                    <button class="win98-btn" style="min-width: 80px;" onclick="closeHelp()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="v2rayHelpOverlay">
+        <div class="container" style="max-width: 480px; background: var(--win-face);">
+            <div class="title-bar">
+                <div class="title-bar-text" id="v2rayHelpTitleText" data-i18n="v2rayHelpTitle">راهنمای استفاده از مبدل</div>
+                <div class="title-bar-controls">
+                    <button onclick="closeV2rayHelp()">✕</button>
+                </div>
+            </div>
+            <div class="window-body" id="v2rayHelpBoxBody" style="text-align: justify; line-height: 1.6;">
+                <p id="helpIntro" style="margin-bottom: 10px; font-weight: bold;"></p>
+                
+                <div class="group-box" style="margin-bottom: 12px; padding: 10px;">
+                    <span class="group-box-title" data-i18n="helpFeaturesTitle">ویژگی‌های فنی و کارکرد</span>
+                    <p id="helpFeaturesContent" style="white-space: pre-line; font-size: 11px;"></p>
+                </div>
+
+                <div class="message-box-buttons" style="margin-top: 12px;">
+                    <button class="win98-btn" style="min-width: 80px;" onclick="closeV2rayHelp()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COUNTRY_FLAGS = {
+          "JP": "🇯🇵 JP", "US": "🇺🇸 US", "NL": "🇳🇱 NL", "DE": "🇩🇪 DE",
+          "FR": "🇫🇷 FR", "GB": "🇬🇧 GB", "CA": "🇨🇦 CA", "AU": "🇦🇺 AU",
+          "RO": "🇷🇴 RO", "PL": "🇵🇱 PL", "SE": "🇸🇪 SE", "CH": "🇨🇭 CH",
+          "SG": "🇸🇬 SG", "HK": "🇭🇰 HK", "IT": "🇮🇹 IT", "ES": "🇪🇸 ES",
+          "BR": "🇧🇷 BR", "IN": "🇮🇳 IN", "MX": "🇲🇽 MX", "ZA": "🇿🇦 ZA",
+          "RU": "🇷🇺 RU", "KR": "🇰🇷 KR", "NO": "🇳🇴 NO", "DK": "🇩🇰 DK",
+          "FI": "🇫🇮 FI", "NZ": "🇳🇿 NZ", "IE": "🇮🇪 IE", "AT": "🇦🇹 AT",
+          "BE": "🇧🇪 BE", "CZ": "🇨🇿 CZ", "PT": "🇵🇹 PT", "TR": "🇹🇷 TR",
+          "UA": "🇺🇦 UA", "AR": "🇦🇷 AR", "CL": "🇨🇱 CL", "CO": "🇨🇴 CO",
+          "TH": "🇹🇭 TH", "MY": "🇲🇾 MY", "ID": "🇮🇩 ID", "AE": "🇦🇪 AE",
+          "SA": "🇸🇦 SA", "IL": "🇮🇱 IL", "EG": "🇪🇬 EG"
+        };
+        const AMNEZIA_KEYS = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4'];
+        const AMNEZIA15_KEYS = ['i1', 'i2', 'i3', 'i4', 'i5'];
+
+        let allGeneratedLinks = []; 
+        let currentFilteredLinks = [];
+        let currentLang = 'fa';
+        let currentActiveApp = 'v2ray'; 
+        let proxyList = []; 
+        let protonProxyList = []; 
+
+        // --- Bilingual Dictionary ---
+        const i18n = {
+            fa: {
+                title: "✨ مبدل پیشرفته پروتکل‌های V2Ray",
+                wgTitle: "🛡️ مبدل پروتکل WireGuard",
+                protonTitle: "🛡️ مبدل تخصصی پروتکل Proton VPN",
+                subLabel: "دریافت مستقیم از لینک سابسکریپشن:",
+                fetchBtn: "دریافت آنلاین",
+                mainLabel: "اطلاعات ورودی (متن خام، کد یا Base64):",
+                mainPlaceholder: "vless:// , trojan:// , vmess:// , ss://\nیا کد JSON یا رشته Base64 سابسکریپشن",
+                pasteTooltip: "جایگذاری",
+                clearTooltip: "پاک کردن",
+                editTitle: "تنظیمات ویرایش و ادغام (اختیاری)",
+                ipLabel: "آی‌پی یا دامنه‌های جدید (هرکدام در یک خط):",
+                ipPlaceholder: "مثال:\nclean1.ip.com\n104.21.12.3",
+                portLabel: "پورت جدید:",
+                portPlaceholder: "443",
+                nameLabel: "نام کانفیگ دلخواه (برای جایگزینی نام‌های اصلی):",
+                namePlaceholder: "مثال: 🚀 VIP Node",
+                base64OptLabel: "خروجی کلی فایل به صورت فشرده (Base64)",
+                b64PackageTitle: "بسته اشتراک فشرده شده (Base64 Package)",
+                convertBtn: "تبدیل و اعمال تغییرات",
+                resultsTitle: "تعداد کانفیگ پردازش شده:",
+                copyAllBtn: "کپی همه کانفیگ‌ها",
+                copySingleBtn: "کپی لینک",
+                copied: "کپی شد ✔",
+                loading: "در حال دریافت...",
+                fetchErr: "خطا در دریافت خودکار. لطفاً محتوا را به صورت دستی وارد کادر کنید.",
+                emptyInput: "لطفاً اطلاعات ورودی را وارد کنید.",
+                notVless: "هیچ کانفیگ معتبری یافت نشد.",
+                successConvert: "تبدیل با موفقیت انجام شد.",
+                pasted: "با موفقیت جایگذاری شد.",
+                pasteErr: "دسترسی به کلیپ‌بورد ممکن نیست. لطفاً به صورت دستی جایگذاری کنید.",
+                menuHelp: "Help",
+                menuReset: "ریست کلی",
+                helpTitle: "ارتباط با ما",
+                v2rayHelpTitle: "راهنمای استفاده از مبدل V2Ray",
+                wgHelpTitle: "راهنمای مبدل WireGuard",
+                protonHelpTitle: "راهنمای مبدل Proton WG",
+                helpFeaturesTitle: "راهنمای کاربردی",
+                helpLinksTitle: "آدرس شبکه‌های اجتماعی",
+                helpIntro: "این ابزار به شما امکان می‌دهد پروتکل‌های ارتباطی مختلف نظیر VLESS ،VMess ،Trojan و Shadowsocks را به صورت همزمان فیلتر، ادغام و بازنویسی کنید.",
+                helpFeatures: "• دریافت مستقیم اطلاعات سابسکریپشن\n• تغییر و جایگزینی دسته‌جمعی IPها و پورت‌های سرورها\n• شخصی‌سازی و اصلاح یکپارچه اسامی کانفیگ‌ها\n• امکان دریافت خروجی نهایی به صورت متن ساده یا فایل فشرده با فرمت Base64\n• سیستم فیلترینگ هوشمند و نمایش QR کد بومی",
+                section_configuration: "پیکربندی فایل ورودی",
+                select_files: "انتخاب فایل‌های .conf",
+                input_placeholder: "یا محتوای فایل .conf خود را در اینجا جایگذاری کنید...",
+                converted_placeholder: "کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد...",
+                output_format: "فرمت خروجی تبدیل",
+                advanced_settings: "تنظیمات پیشرفته مبدل",
+                junk_packet_settings: "تنظیمات پکت‌های هرز (Junk Packets)",
+                enable_15: "فعال‌سازی نسخه آمونیا ۱.۵ (Amnezia 1.5)",
+                light_option: "سبک (jc=3, jmin=1, jmax=3)",
+                heavy_option: "سنگین (jc=5, jmin=10, jmax=40)",
+                custom_settings: "تنظیمات سفارشی",
+                generate_random: "تولید مقادیر تصادفی",
+                amnezia_params: "پارامترهای آمونیا ۱.۵",
+                wiresock_params: "پارامترهای Wiresock",
+                convert: "تبدیل کانفیگ",
+                clear: "پاک کردن",
+                download: "دانلود کانفیگ",
+                copy: "کپی خروجی",
+                no_files: "هیچ فایلی انتخاب نشده است",
+                files_selected: "{count} فایل انتخاب شده است",
+                proton_awg15: "AWG 1.5 فعال",
+                proton_nojunk: "حذف پکت‌های هرز (No Junk)",
+                proton_nolan: "مسدودسازی رنج شبکه محلی (Exclude LAN)",
+                proton_domain_prompt: "لطفاً دامنه‌ای برای تولید کلید هگز I1 وارد کنید:"
+            },
+            en: {
+                title: "✨ Advanced V2Ray Protocol Converter",
+                wgTitle: "🛡️ WireGuard Protocol Converter",
+                protonTitle: "🛡️ Proton VPN Protocol Converter",
+                subLabel: "Fetch directly from Subscription Link:",
+                fetchBtn: "Fetch Online",
+                mainLabel: "Input Data (Raw text, configs, or Base64):",
+                mainPlaceholder: "vless:// , trojan:// , vmess:// , ss://\nor JSON config or Base64 subscription string",
+                pasteTooltip: "Paste",
+                clearTooltip: "Clear",
+                editTitle: "Edit & Integration Settings (Optional)",
+                ipLabel: "New IPs or Domains (one per line):",
+                ipPlaceholder: "e.g.\nclean1.ip.com\n104.21.12.3",
+                portLabel: "New Port:",
+                portPlaceholder: "443",
+                nameLabel: "Custom Config Name (To replace originals):",
+                namePlaceholder: "e.g. 🚀 VIP Node",
+                base64OptLabel: "Encode final output as Base64",
+                b64PackageTitle: "Base64 Subscription Package",
+                convertBtn: "Convert & Apply",
+                resultsTitle: "Processed Configs Count:",
+                copyAllBtn: "Copy All Configs",
+                copySingleBtn: "Copy",
+                copied: "Copied ✔",
+                loading: "Fetching...",
+                fetchErr: "Failed to fetch automatically. Please copy & paste the content manually.",
+                emptyInput: "Please enter input data.",
+                notVless: "No valid configurations found.",
+                successConvert: "Successfully converted.",
+                pasted: "Pasted successfully.",
+                pasteErr: "Unable to read from clipboard. Please paste manually.",
+                menuHelp: "Help",
+                menuReset: "Reset All",
+                helpTitle: "About Us",
+                v2rayHelpTitle: "V2Ray Converter Help Guide",
+                wgHelpTitle: "WireGuard Converter Help Guide",
+                protonHelpTitle: "Proton WG Converter Help Guide",
+                helpFeaturesTitle: "Operations Guide",
+                helpLinksTitle: "Social Network Addresses",
+                helpIntro: "This utility allows you to manage, edit, and merge various communication protocols including VLESS, VMess, Trojan, and Shadowsocks.",
+                helpFeatures: "• Direct online subscription fetching and processing\n• Mass replace and override IP addresses and port configurations\n• Uniform naming customization for all profile outputs\n• Generate standard link lists or compressed Base64 formatted subscription files\n• Built-in protocol filtering and offline QR code generator",
+                section_configuration: "Input Configuration",
+                select_files: "Select .conf files",
+                input_placeholder: "Or paste your .conf file content here...",
+                converted_placeholder: "The converted configuration will appear here...",
+                output_format: "Output Format",
+                advanced_settings: "Advanced Settings",
+                junk_packet_settings: "Junk Packet Settings",
+                enable_15: "Enable Amnezia 1.5 (I1-I5)",
+                light_option: "Light (jc=3, jmin=1, jmax=3)",
+                heavy_option: "Heavy (jc=5, jmin=10, jmax=40)",
+                custom_settings: "Custom Settings",
+                generate_random: "Generate Random",
+                amnezia_params: "Amnezia 1.5 Parameters",
+                wiresock_params: "Wiresock Parameters",
+                convert: "Convert",
+                clear: "Clear",
+                download: "Download",
+                copy: "Copy",
+                no_files: "No files selected",
+                files_selected: "{count} files selected",
+                proton_awg15: "Enable AWG 1.5",
+                proton_nojunk: "Strip Junk Packets",
+                proton_nolan: "Exclude LAN Traffic",
+                proton_domain_prompt: "Enter Domain to generate hex key for I1:"
+            }
+        };
+
+        function updateLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[currentLang][key]) {
+                    el.innerText = i18n[currentLang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[currentLang][key]) {
+                    el.placeholder = i18n[currentLang][key];
+                }
+            });
+
+            document.getElementById('btnPasteTooltip').innerText = i18n[currentLang].pasteTooltip;
+            document.getElementById('btnClearTooltip').innerText = i18n[currentLang].clearTooltip;
+            
+            document.getElementById('helpIntro').innerText = i18n[currentLang].helpIntro;
+            document.getElementById('helpFeaturesContent').innerText = i18n[currentLang].helpFeatures;
+
+            const helpBoxBody = document.getElementById('helpBoxBody');
+            const v2rayHelpBoxBody = document.getElementById('v2rayHelpBoxBody');
+            
+            if (currentLang === 'fa') {
+                document.documentElement.dir = 'rtl';
+                document.documentElement.lang = 'fa';
+                document.getElementById('langText').innerText = 'EN';
+                helpBoxBody.style.textAlign = 'justify';
+                helpBoxBody.style.direction = 'rtl';
+                v2rayHelpBoxBody.style.textAlign = 'justify';
+                v2rayHelpBoxBody.style.direction = 'rtl';
+            } else {
+                document.documentElement.dir = 'ltr';
+                document.documentElement.lang = 'en';
+                document.getElementById('langText').innerText = 'FA';
+                helpBoxBody.style.textAlign = 'left';
+                helpBoxBody.style.direction = 'ltr';
+                v2rayHelpBoxBody.style.textAlign = 'left';
+                v2rayHelpBoxBody.style.direction = 'ltr';
+            }
+            updateTitleBarText();
+            updateWgFileLabel();
+            updateProtonFileLabel();
+            setupHelpTextByApp();
+        }
+
+        function setupHelpTextByApp() {
+            const v2rayTitle = document.getElementById('v2rayHelpTitleText');
+            const helpFeaturesContent = document.getElementById('helpFeaturesContent');
+            const helpIntro = document.getElementById('helpIntro');
+
+            if (currentActiveApp === 'v2ray') {
+                v2rayTitle.innerText = i18n[currentLang].v2rayHelpTitle;
+                helpIntro.innerText = i18n[currentLang].helpIntro;
+                helpFeaturesContent.innerText = i18n[currentLang].helpFeatures;
+            } else if (currentActiveApp === 'wireguard') {
+                v2rayTitle.innerText = i18n[currentLang].wgHelpTitle;
+                helpIntro.innerText = currentLang === 'fa' 
+                    ? "ابزار تبدیل ساختاری پروتکل وایرگارد برای کلاینت‌های مختلف."
+                    : "WireGuard profile structural converter for standard clients.";
+                helpFeaturesContent.innerText = currentLang === 'fa'
+                    ? "• تبدیل فرمت .conf به Clash و AmneziaWG و Wiresock\n• تولید کلید و مقادیر پکت هرز به صورت سبک یا سنگین یا تصادفی\n• پردازش چند فایلی همزمان با امکان کپی و دانلود نتایج"
+                    : "• Converts standard .conf into Clash, AmneziaWG, and Wiresock profiles.\n• Generate Light, Heavy, or custom randomized Junk packet attributes.\n• Support multi-profile batch output with copy/download options.";
+            } else {
+                v2rayTitle.innerText = i18n[currentLang].protonHelpTitle;
+                helpIntro.innerText = currentLang === 'fa'
+                    ? "مبدل و ویرایشگر پیشرفته و اختصاصی کانفیگ‌های شرکت Proton VPN."
+                    : "Advanced structural converter dedicated to Proton VPN wireguard profiles.";
+                helpFeaturesContent.innerText = currentLang === 'fa'
+                    ? "• قابلیت حذف دسته‌جمعی پکت‌های هرز (No Junk)\n• قابلیت ویژه تفکیک و روتینگ ترافیک (Exclude LAN)\n• مولد هگز پیشرفته آمونیا ۱.۵ بر اساس تبدیل آدرس دامنه‌ها\n• ساختاربندی تخصصی فرمت کلاینت‌های Karing/Wiresock"
+                    : "• Mass strip junk packet configurations (No Junk option).\n• Exclude LAN subnets route generation feature.\n• Advanced offline Amnezia 1.5 Hex generator converting domains to binary keys.\n• Special WireSock/Karing structural parameters organizer.";
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'fa' ? 'en' : 'fa';
+            updateLanguage();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+
+        function clearMainInput() {
+            document.getElementById('mainInput').value = '';
+        }
+
+        function updateTitleBarText() {
+            const titleEl = document.getElementById('appTitle');
+            if (currentActiveApp === 'v2ray') {
+                titleEl.innerText = i18n[currentLang].title;
+            } else if (currentActiveApp === 'wireguard') {
+                titleEl.innerText = i18n[currentLang].wgTitle;
+            } else {
+                titleEl.innerText = i18n[currentLang].protonTitle;
+            }
+        }
+
+        // --- Improved Clipboard Paste Handling with Native Prompt Fallback ---
+        async function pasteFromClipboard() {
+            let pastedText = "";
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    pastedText = await navigator.clipboard.readText();
+                }
+            } catch (err) {}
+            
+            if (!pastedText) {
+                pastedText = prompt(currentLang === 'fa' ? 'لطفاً متن کپی شده را در این فیلد وارد کنید:' : 'Please paste your copied text into this box:');
+            }
+            
+            if (pastedText) {
+                document.getElementById('mainInput').value = pastedText;
+                showToast(i18n[currentLang].pasted);
+            }
+        }
+
+        // --- Master Global System Reset Function ---
+        function resetAllSystems() {
+            // V2Ray Reset
+            document.getElementById('subUrlInput').value = '';
+            document.getElementById('mainInput').value = '';
+            document.getElementById('overrideIP').value = '';
+            document.getElementById('overridePort').value = '';
+            document.getElementById('customName').value = '';
+            document.getElementById('base64OutputOpt').checked = false;
+
+            // General WireGuard Reset
+            document.getElementById('wgFiles').value = '';
+            document.getElementById('confInput').value = '';
+            document.getElementById('confInput').disabled = false;
+            document.getElementById('yamlOutput').value = '';
+            document.getElementById('jc1').value = '';
+            document.getElementById('jmin1').value = '';
+            document.getElementById('jmax1').value = '';
+            document.getElementById('i1_1').value = '';
+            document.getElementById('i2_1').value = '';
+            document.getElementById('i3_1').value = '';
+            document.getElementById('i4_1').value = '';
+            document.getElementById('i5_1').value = '';
+            document.getElementById('ws_id').value = '';
+            document.getElementById('ws_jc1').value = '';
+            document.getElementById('ws_jmin1').value = '';
+            document.getElementById('ws_jmax1').value = '';
+            document.getElementById('ws_ip').selectedIndex = 0;
+            document.getElementById('ws_ib').selectedIndex = 0;
+            document.getElementById('downloadBtn').classList.add('hidden');
+            document.getElementById('copyBtn').classList.add('hidden');
+            proxyList = [];
+
+            // Proton Reset
+            document.getElementById('proton_wgFiles').value = '';
+            document.getElementById('proton_confInput').value = '';
+            document.getElementById('proton_yamlOutput').value = '';
+            document.getElementById('proton_jc1').value = '';
+            document.getElementById('proton_jmin1').value = '';
+            document.getElementById('proton_jmax1').value = '';
+            document.getElementById('proton_i1').value = '';
+            document.getElementById('proton_i2').value = '';
+            document.getElementById('proton_i3').value = '';
+            document.getElementById('proton_i4').value = '';
+            document.getElementById('proton_i5').value = '';
+            document.getElementById('proton_id').value = '';
+            document.getElementById('proton_ip').selectedIndex = 0;
+            document.getElementById('proton_ib').selectedIndex = 0;
+            document.getElementById('proton_awg15').checked = true;
+            document.getElementById('proton_nojunk').checked = false;
+            document.getElementById('proton_nolan').checked = false;
+            document.getElementById('proton_downloadBtn').classList.add('hidden');
+            document.getElementById('proton_copyBtn').classList.add('hidden');
+            protonProxyList = [];
+
+            // Reset Shared View State
+            allGeneratedLinks = [];
+            currentFilteredLinks = [];
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('configsContainer').innerHTML = '';
+
+            updateWgFileLabel();
+            updateProtonFileLabel();
+            toggleProtonAWG15Containers();
+            toggleProtonJunkContainer();
+
+            showToast(currentLang === 'fa' ? 'تمامی ابزارها با موفقیت ریست شدند.' : 'All converters reset successfully.');
+        }
+
+        // --- App Selection Handlers ---
+        function selectShortcut(type, element) {
+            document.querySelectorAll('.shortcut').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            document.getElementById('v2rayView').classList.add('hidden');
+            document.getElementById('wireguardView').classList.add('hidden');
+            document.getElementById('protonView').classList.add('hidden');
+            document.getElementById('resultsSection').style.display = 'none';
+
+            if (type === 'v2ray') {
+                currentActiveApp = 'v2ray';
+                document.getElementById('v2rayView').classList.remove('hidden');
+            } else if (type === 'wireguard') {
+                currentActiveApp = 'wireguard';
+                document.getElementById('wireguardView').classList.remove('hidden');
+            } else if (type === 'proton') {
+                currentActiveApp = 'proton';
+                document.getElementById('protonView').classList.remove('hidden');
+            }
+            updateTitleBarText();
+            setupHelpTextByApp();
+        }
+
+        function showToast(message) {
+            const overlay = document.getElementById('msgBoxOverlay');
+            const messageText = document.getElementById('toastMessage');
+            messageText.innerText = message;
+            overlay.style.display = 'flex';
+        }
+
+        function closeToast() {
+            document.getElementById('msgBoxOverlay').style.display = 'none';
+        }
+
+        function openHelp() {
+            document.getElementById('helpBoxOverlay').style.display = 'flex';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpBoxOverlay').style.display = 'none';
+        }
+
+        function openV2rayHelp() {
+            document.getElementById('v2rayHelpOverlay').style.display = 'flex';
+        }
+
+        function closeV2rayHelp() {
+            document.getElementById('v2rayHelpOverlay').style.display = 'none';
+        }
+
+        // ==========================================================================
+        //  V2RAY Processing Methods
+        // ==========================================================================
+        async function fetchSubscription() {
+            const urlInput = document.getElementById('subUrlInput').value.trim();
+            if (!urlInput) {
+                showToast(currentLang === 'fa' ? 'لطفاً لینک سابسکریپشن را وارد کنید.' : 'Please enter subscription link.');
+                return;
+            }
+
+            const spinner = document.getElementById('fetchSpinner');
+            const textSpan = document.getElementById('fetchBtnText');
+            spinner.style.display = 'inline-block';
+            textSpan.innerText = i18n[currentLang].loading;
+
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlInput)}`;
+            try {
+                let response = await fetch(urlInput).catch(() => null);
+                if (!response || !response.ok) {
+                    response = await fetch(proxyUrl);
+                }
+                if (!response.ok) throw new Error();
+                const rawContent = await response.text();
+                if (!rawContent || rawContent.trim() === '') throw new Error();
+                let processedContent = rawContent.trim();
+                const decoded = safeAtob(processedContent);
+                if (decoded && (decoded.includes('://') || decoded.includes('{') || decoded.includes('['))) {
+                    processedContent = decoded;
+                }
+                document.getElementById('mainInput').value = processedContent;
+                showToast(currentLang === 'fa' ? 'اطلاعات با موفقیت دریافت و رمزگشایی شد.' : 'Subscription content fetched successfully.');
+            } catch (error) {
+                showToast(i18n[currentLang].fetchErr);
+            } finally {
+                spinner.style.display = 'none';
+                textSpan.innerText = i18n[currentLang].fetchBtn;
+            }
+        }
+
+        function parseUri(uri) {
+            try {
+                const trimmedUri = uri.trim();
+                if (!trimmedUri) return null;
+                if (trimmedUri.startsWith('vmess://')) {
+                    const b64 = trimmedUri.substring(8).trim();
+                    const decoded = safeAtob(b64);
+                    if (decoded) {
+                        const obj = JSON.parse(decoded);
+                        return { protocol: 'vmess', address: obj.add, port: obj.port, remark: obj.ps || 'VMess Config', vmessObj: obj };
+                    }
+                    return null;
+                }
+                const match = trimmedUri.match(/^([^:]+):\/\/(.+)$/);
+                if (!match) return null;
+                const protocol = match[1].toLowerCase();
+                if (!['vless', 'trojan', 'ss'].includes(protocol)) return null;
+                const restOfUri = match[2];
+                const mainParts = restOfUri.split('#');
+                const remark = mainParts[1] ? decodeURIComponent(mainParts[1]) : `${protocol.toUpperCase()} Config`;
+                const connectionPart = mainParts[0];
+                const atIndex = connectionPart.lastIndexOf('@');
+                if (atIndex === -1) {
+                    if (protocol === 'ss') {
+                        const decoded = safeAtob(connectionPart);
+                        if (decoded && decoded.includes('@')) return parseUri(`ss://${decoded}#${encodeURIComponent(remark)}`);
+                    }
+                    return null;
+                }
+                const user = connectionPart.substring(0, atIndex);
+                const rest = connectionPart.substring(atIndex + 1);
+                const queryIndex = rest.indexOf('?');
+                const addressPortPart = queryIndex === -1 ? rest : rest.substring(0, queryIndex);
+                const queryPart = queryIndex === -1 ? '' : rest.substring(queryIndex + 1);
+                const portIndex = addressPortPart.lastIndexOf(':');
+                if (portIndex === -1) return null;
+                const address = addressPortPart.substring(0, portIndex);
+                const port = addressPortPart.substring(portIndex + 1);
+                const params = new URLSearchParams(queryPart);
+                return { protocol, user, address, port, params, remark };
+            } catch (e) { return null; }
+        }
+
+        function parseOutboundJson(ob, baseRemark) {
+            const protocol = ob.protocol;
+            if (!['vless', 'trojan', 'vmess', 'shadowsocks', 'ss'].includes(protocol)) return null;
+            let address = '', port = '', user = '';
+            const params = new URLSearchParams();
+            const normProtocol = (protocol === 'shadowsocks') ? 'ss' : protocol;
+            const stream = ob.streamSettings || {};
+            const network = stream.network || "tcp";
+            const security = stream.security || "none";
+            params.set('type', network);
+            if (security !== "none") params.set('security', security);
+            if (network === "ws" && stream.wsSettings) {
+                const ws = stream.wsSettings;
+                if (ws.path) params.set('path', ws.path);
+                const host = ws.host || ws.headers?.Host || ws.headers?.host;
+                if (host) params.set('host', host);
+            }
+            if (network === "grpc" && stream.grpcSettings) {
+                const grpc = stream.grpcSettings;
+                if (grpc.serviceName) params.set('serviceName', grpc.serviceName);
+            }
+            if ((network === "h2" || network === "http") && stream.httpSettings) {
+                const http = stream.httpSettings;
+                if (http.path) params.set('path', http.path);
+                if (http.host) {
+                    const h = Array.isArray(http.host) ? http.host.join(',') : http.host;
+                    params.set('host', h);
+                }
+            }
+            if (security === "tls" && stream.tlsSettings) {
+                const tls = stream.tlsSettings;
+                if (tls.serverName) params.set('sni', tls.serverName);
+                if (tls.fingerprint) params.set('fp', tls.fingerprint);
+                if (tls.alpn && Array.isArray(tls.alpn)) params.set('alpn', tls.alpn.join(','));
+            } else if (security === "reality" && stream.realitySettings) {
+                const reality = stream.realitySettings;
+                if (reality.serverName) params.set('sni', reality.serverName);
+                if (reality.fingerprint) params.set('fp', reality.fingerprint);
+                if (reality.publicKey) params.set('pbk', reality.publicKey);
+                if (reality.shortId) params.set('sid', reality.shortId);
+            }
+            if (protocol === 'vless' || protocol === 'vmess') {
+                const vnext = ob.settings?.vnext?.[0];
+                if (!vnext) return null;
+                address = vnext.address;
+                port = vnext.port;
+                const u = vnext.users?.[0];
+                user = u?.id || '';
+                if (protocol === 'vless') {
+                    const encryption = u?.encryption || "none";
+                    const flow = u?.flow;
+                    if (encryption !== "none") params.set('encryption', encryption);
+                    if (flow) params.set('flow', flow);
+                } else {
+                    const remark = ob.tag || baseRemark || "VMess Config";
+                    const vmessObj = {
+                        v: "2", ps: remark, add: address, port: parseInt(port) || 443, id: user, aid: "0", scy: "auto",
+                        net: network, type: "none", host: params.get('host') || "", path: params.get('path') || "",
+                        tls: security === "tls" ? "tls" : "none", sni: params.get('sni') || "", fp: params.get('fp') || "",
+                        alpn: params.get('alpn') || ""
+                    };
+                    return { protocol: 'vmess', address, port, remark, vmessObj };
+                }
+            } else if (protocol === 'trojan') {
+                const server = ob.settings?.servers?.[0];
+                if (!server) return null;
+                address = server.address;
+                port = server.port;
+                user = server.password || '';
+            } else if (protocol === 'shadowsocks' || protocol === 'ss') {
+                const server = ob.settings?.servers?.[0];
+                if (!server) return null;
+                address = server.address;
+                port = server.port;
+                const method = server.method || 'aes-256-gcm';
+                const password = server.password || '';
+                user = safeBtoa(`${method}:${password}`).replace(/=/g, '');
+            }
+            return { protocol: normProtocol, user, address, port, params, remark: ob.tag || baseRemark || `${protocol.toUpperCase()} Config` };
+        }
+
+        function processAllInputs() {
+            let input = document.getElementById('mainInput').value.trim();
+            const overrideIPText = document.getElementById('overrideIP').value.trim();
+            const overridePort = document.getElementById('overridePort').value.trim();
+            const customName = document.getElementById('customName').value.trim();
+            if (!input) {
+                showToast(i18n[currentLang].emptyInput);
+                return;
+            }
+            let ipList = [];
+            if (overrideIPText) {
+                ipList = overrideIPText.split(/[\n,]+/).map(ip => ip.trim()).filter(ip => ip.length > 0);
+            }
+            if (ipList.length === 0) ipList = [null];
+            const base64Decoded = safeAtob(input);
+            if (base64Decoded && (base64Decoded.includes('://') || base64Decoded.includes('{'))) {
+                input = base64Decoded.trim();
+            }
+            let parsedConfigs = [];
+            if (input.startsWith('{') || input.startsWith('[')) {
+                try {
+                    const parsedData = JSON.parse(input);
+                    const dataArray = Array.isArray(parsedData) ? parsedData : [parsedData];
+                    dataArray.forEach(data => {
+                        const baseRemarks = data.remarks || "Config";
+                        if (data.outbounds && Array.isArray(data.outbounds)) {
+                            data.outbounds.forEach(ob => {
+                                const parsed = parseOutboundJson(ob, baseRemarks);
+                                if (parsed) parsedConfigs.push(parsed);
+                            });
+                        } else if (data.protocol) {
+                            const parsed = parseOutboundJson(data, baseRemarks);
+                            if (parsed) parsedConfigs.push(parsed);
+                        }
+                    });
+                } catch (e) {}
+            }
+            if (parsedConfigs.length === 0) {
+                const lines = input.split(/[\n\r]+/);
+                lines.forEach(line => {
+                    const cleanLine = line.trim();
+                    if (!cleanLine) return;
+                    const hasProto = /^(vless|trojan|vmess|ss):\/\//i.test(cleanLine);
+                    if (hasProto) {
+                        const parsed = parseUri(cleanLine);
+                        if (parsed) parsedConfigs.push(parsed);
+                    } else {
+                        const decodedLine = safeAtob(cleanLine);
+                        if (decodedLine) {
+                            const nestedLines = decodedLine.split(/[\n\r]+/);
+                            nestedLines.forEach(nl => {
+                                if (/^(vless|trojan|vmess|ss):\/\//i.test(nl.trim())) {
+                                    const parsed = parseUri(nl.trim());
+                                    if (parsed) parsedConfigs.push(parsed);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            if (parsedConfigs.length === 0) {
+                showToast(i18n[currentLang].notVless);
+                return;
+            }
+            allGeneratedLinks = [];
+            const stats = { all: 0, vless: 0, vmess: 0, trojan: 0, ss: 0 };
+            parsedConfigs.forEach((config, configIndex) => {
+                ipList.forEach((ip, ipIndex) => {
+                    const finalAddress = ip ? ip : config.address;
+                    const finalPort = overridePort ? overridePort : config.port;
+                    let finalName = customName ? customName : config.remark;
+                    if (ipList.length > 1 && ip) {
+                        const ipLabel = ip.length > 18 ? ip.substring(0, 15) + '...' : ip;
+                        finalName = `${finalName} (${ipLabel})`;
+                    }
+                    if (parsedConfigs.length > 1) {
+                        finalName = `${finalName} - ${configIndex + 1}`;
+                    }
+                    let finalUri = '';
+                    if (config.protocol === 'vmess') {
+                        const obj = JSON.parse(JSON.stringify(config.vmessObj));
+                        obj.add = finalAddress;
+                        obj.port = parseInt(finalPort) || 443;
+                        obj.ps = finalName;
+                        finalUri = 'vmess://' + safeBtoa(JSON.stringify(obj));
+                    } else {
+                        const encodedRemarks = encodeURIComponent(finalName);
+                        const queryStr = config.params ? config.params.toString() : '';
+                        const queryPart = queryStr ? `?${queryStr}` : '';
+                        finalUri = `${config.protocol}://${config.user}@${finalAddress}:${finalPort}${queryPart}#${encodedRemarks}`;
+                    }
+                    allGeneratedLinks.push({ uri: finalUri, name: finalName, protocol: config.protocol });
+                    stats.all++;
+                    stats[config.protocol]++;
+                });
+            });
+            generateStatsUI(stats);
+            generateFilterButtons(stats);
+            filterResults('all');
+            document.getElementById('resultsSection').style.display = 'block';
+            showToast(i18n[currentLang].successConvert);
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateStatsUI(stats) {
+            const container = document.getElementById('statsContainer');
+            container.innerHTML = `
+                <div class="stat-field">کل: ${stats.all}</div>
+                ${stats.vless > 0 ? `<div class="stat-field">VLESS: ${stats.vless}</div>` : ''}
+                ${stats.vmess > 0 ? `<div class="stat-field">VMess: ${stats.vmess}</div>` : ''}
+                ${stats.trojan > 0 ? `<div class="stat-field">Trojan: ${stats.trojan}</div>` : ''}
+                ${stats.ss > 0 ? `<div class="stat-field">SS: ${stats.ss}</div>` : ''}
+            `;
+        }
+
+        function generateFilterButtons(stats) {
+            const container = document.getElementById('filterButtonsContainer');
+            container.innerHTML = `
+                <button class="win98-tab active" onclick="filterResults('all', this)">همه (${stats.all})</button>
+                ${stats.vless > 0 ? `<button class="win98-tab" onclick="filterResults('vless', this)">VLESS (${stats.vless})</button>` : ''}
+                ${stats.vmess > 0 ? `<button class="win98-tab" onclick="filterResults('vmess', this)">VMess (${stats.vmess})</button>` : ''}
+                ${stats.trojan > 0 ? `<button class="win98-tab" onclick="filterResults('trojan', this)">Trojan (${stats.trojan})</button>` : ''}
+                ${stats.ss > 0 ? `<button class="win98-tab" onclick="filterResults('ss', this)">SS (${stats.ss})</button>` : ''}
+            `;
+        }
+
+        function filterResults(proto, element) {
+            if (element) {
+                document.querySelectorAll('.win98-tab').forEach(btn => btn.classList.remove('active'));
+                element.classList.add('active');
+            }
+            const container = document.getElementById('configsContainer');
+            container.innerHTML = '';
+            if (proto === 'all') {
+                currentFilteredLinks = [...allGeneratedLinks];
+            } else {
+                currentFilteredLinks = allGeneratedLinks.filter(item => item.protocol === proto);
+            }
+            const isBase64Opt = document.getElementById('base64OutputOpt').checked;
+            if (isBase64Opt) {
+                const combinedUris = currentFilteredLinks.map(item => item.uri).join('\n');
+                const b64String = safeBtoa(combinedUris);
+                createBase64Card(b64String, container);
+                document.getElementById('resultsCount').innerHTML = `
+                    <span>${i18n[currentLang].resultsTitle} ${currentFilteredLinks.length} (${i18n[currentLang].b64PackageTitle})</span>
+                `;
+            } else {
+                currentFilteredLinks.forEach((item, index) => {
+                    createConfigCard(item.uri, item.name, container, index);
+                });
+                document.getElementById('resultsCount').innerHTML = `
+                    <span>${i18n[currentLang].resultsTitle} ${currentFilteredLinks.length}</span>
+                `;
+            }
+        }
+
+        function createConfigCard(uri, name, container, index) {
+            const card = document.createElement('div');
+            card.className = 'config-card';
+            card.innerHTML = `
+                <div class="config-card-header">
+                    <span class="config-name" title="${name}">${name}</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="win98-btn" onclick="toggleQRCode('${encodeURIComponent(uri)}', ${index})">QR</button>
+                        <button class="win98-btn" id="btn-copy-${index}" onclick="copySingle('${encodeURIComponent(uri)}', 'btn-copy-${index}')">${i18n[currentLang].copySingleBtn}</button>
+                    </div>
+                </div>
+                <div class="config-link">${uri}</div>
+                <div class="qr-wrapper" id="qr-wrapper-${index}">
+                    <canvas id="qr-canvas-${index}"></canvas>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        function createBase64Card(b64Data, container) {
+            const card = document.createElement('div');
+            card.className = 'config-card';
+            card.innerHTML = `
+                <div class="config-card-header">
+                    <span class="config-name" data-i18n="b64PackageTitle">${i18n[currentLang].b64PackageTitle}</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="win98-btn" id="btn-copy-b64" onclick="copySingle('${encodeURIComponent(b64Data)}', 'btn-copy-b64')">${i18n[currentLang].copySingleBtn}</button>
+                    </div>
+                </div>
+                <div class="config-link" style="max-height: 150px;">${b64Data}</div>
+            `;
+            container.appendChild(card);
+        }
+
+        function toggleQRCode(encodedUri, index) {
+            const wrapper = document.getElementById(`qr-wrapper-${index}`);
+            if (wrapper.style.display === 'block') {
+                wrapper.style.display = 'none';
+            } else {
+                wrapper.style.display = 'block';
+                const canvas = document.getElementById(`qr-canvas-${index}`);
+                const uri = decodeURIComponent(encodedUri);
+                new QRious({ element: canvas, value: uri, size: 140, background: '#ffffff', foreground: '#000000', level: 'L' });
+            }
+        }
+
+        function copySingle(encodedUri, btnId) {
+            const uri = decodeURIComponent(encodedUri);
+            navigator.clipboard.writeText(uri).then(() => {
+                const btn = document.getElementById(btnId);
+                const originalText = btn.innerText;
+                btn.innerText = i18n[currentLang].copied;
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            });
+        }
+
+        function copyAll() {
+            if (currentFilteredLinks.length === 0) return;
+            const isBase64Opt = document.getElementById('base64OutputOpt').checked;
+            const fullText = currentFilteredLinks.map(item => item.uri).join('\n');
+            const finalOutput = isBase64Opt ? safeBtoa(fullText) : fullText;
+            navigator.clipboard.writeText(finalOutput).then(() => {
+                showToast(currentLang === 'fa' ? `محتوای خروجی با موفقیت کپی شد.` : `Output content successfully copied.`);
+            });
+        }
+
+        // ==========================================================================
+        //  WireGuard Processing Methods
+        // ==========================================================================
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function handleWgOptionChange(formatId) {
+            const isWiresocket = formatId === 'wiresocket';
+            document.getElementById('musor1').classList.toggle('hidden', isWiresocket);
+            document.getElementById('musor2').classList.toggle('hidden', !isWiresocket);
+            
+            const amnezia15Toggle = document.getElementById('amnezia15-toggle-label');
+            if (amnezia15Toggle) {
+                amnezia15Toggle.style.display = isWiresocket ? 'none' : 'block';
+            }
+            const amnezia15Checkbox = document.getElementById('enableAmnezia15');
+            if (isWiresocket && amnezia15Checkbox) {
+                amnezia15Checkbox.checked = false;
+                toggleAmnezia15();
+            }
+        }
+
+        function toggleAmnezia15() {
+            const isChecked = document.getElementById('enableAmnezia15')?.checked || false;
+            document.getElementById('amnezia15-inputs')?.classList.toggle('hidden', !isChecked);
+        }
+
+        function handleRandomJunk() {
+            const jc = getRandomInt(1, 128);
+            const jmin = getRandomInt(1, 1279);
+            const jmax = getRandomInt(jmin + 1, 1280);
+            document.getElementById('jc1').value = jc;
+            document.getElementById('jmin1').value = jmin;
+            document.getElementById('jmax1').value = jmax;
+            document.getElementById('junk3').checked = true;
+        }
+
+        function handleRandomWiresocket() {
+            const jc = getRandomInt(1, 128);
+            const jmin = getRandomInt(1, 1279);
+            const jmax = getRandomInt(jmin + 1, 1280);
+            document.getElementById('ws_jc1').value = jc;
+            document.getElementById('ws_jmin1').value = jmin;
+            document.getElementById('ws_jmax1').value = jmax;
+            document.getElementById('ws_junk3').checked = true;
+        }
+
+        function generateWiresocketDefaults() {
+            const isLight = document.getElementById('ws_junk1')?.checked;
+            const isHeavy = document.getElementById('ws_junk2')?.checked;
+            let jc, jmin, jmax;
+            if (isLight) {
+                jc = 3; jmin = 1; jmax = 3;
+            } else if (isHeavy) {
+                jc = 5; jmin = 10; jmax = 40;
+            } else {
+                jc = parseInt(document.getElementById('ws_jc1')?.value) || 128;
+                jmin = parseInt(document.getElementById('ws_jmin1')?.value) || 1279;
+                jmax = parseInt(document.getElementById('ws_jmax1')?.value) || 1280;
+            }
+            if (jmax <= jmin) {
+                jmax = jmin + 1;
+            }
+            return {
+                jc, jmin, jmax, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4,
+                id: document.getElementById('ws_id')?.value || '',
+                ip: document.getElementById('ws_ip')?.value || 'QUIC',
+                ib: document.getElementById('ws_ib')?.value || 'Chrome'
+            };
+        }
+
+        function parseWGConfig(text) {
+            const config = { interface: { amneziaOptions: {} }, peers: [] };
+            let currentSection = null;
+            let peerIndex = -1;
+            const lines = text.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const trimmedLine = lines[i].trim();
+                if (!trimmedLine) continue;
+                if (trimmedLine.startsWith('[') && trimmedLine.endsWith(']')) {
+                    currentSection = trimmedLine.slice(1, -1).toLowerCase();
+                    if (currentSection === 'peer') {
+                        peerIndex++;
+                        config.peers.push({ amneziaOptions: {} });
+                        if (i + 1 < lines.length) {
+                            const nextLine = lines[i + 1].trim();
+                            const nameMatch = nextLine.match(/^#\s*(.+)/);
+                            if (nameMatch) {
+                                config.peers[peerIndex].name = nameMatch[1].trim();
+                                i++;
+                            }
+                        }
+                    }
+                    continue;
+                }
+                const equalIndex = trimmedLine.indexOf('=');
+                if (equalIndex === -1) continue;
+                const key = trimmedLine.slice(0, equalIndex).trim().toLowerCase();
+                const value = trimmedLine.slice(equalIndex + 1).trim();
+
+                if (currentSection === 'interface') {
+                    const target = [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS, 'id', 'ip', 'ib'].includes(key) 
+                        ? config.interface.amneziaOptions : config.interface;
+                    target[key] = value;
+                } else if (currentSection === 'peer' && peerIndex >= 0) {
+                    const peer = config.peers[peerIndex];
+                    if ([...AMNEZIA_KEYS, ...AMNEZIA15_KEYS, 'id', 'ip', 'ib'].includes(key)) {
+                        peer.amneziaOptions[key] = value;
+                    } else if (key === 'presharedkey') {
+                        peer.presharedKey = value;
+                    } else {
+                        peer[key] = value;
+                    }
+                }
+            }
+            if (config.peers.length > 0 && !config.peers[0].name) {
+                const nameMatch = text.match(/#\s*(NL-FREE#?\d+)/);
+                if (nameMatch) config.peers[0].name = nameMatch[1];
+            }
+            return config;
+        }
+
+        function parseMultipleWGConfigs(text) {
+            return text.split(/\n(?=\[Interface\])/)
+                .map(part => part.trim())
+                .filter(part => part.length > 0)
+                .map(part => parseWGConfig(part));
+        }
+
+        function convertToProxy(wgConfig, fileName, format = 'clash') {
+            const { interface: interfaceData, peers } = wgConfig;
+            const peerData = peers[0];
+            if (!peerData?.endpoint) {
+                throw new Error('Missing peer endpoint');
+            }
+            const [server, port] = peerData.endpoint.split(':');
+            const dnsList = interfaceData.dns ? interfaceData.dns.split(',').map(d => d.trim()) : [];
+            let options = {};
+            if (format === 'wiresocket') {
+                options = generateWiresocketDefaults();
+                options.id = interfaceData.amneziaOptions.id || peerData.amneziaOptions.id || options.id;
+                options.ip = interfaceData.amneziaOptions.ip || peerData.amneziaOptions.ip || options.ip;
+                options.ib = interfaceData.amneziaOptions.ib || peerData.amneziaOptions.ib || options.ib;
+            } else {
+                options = generateAmneziaDefaults();
+                for (const key of AMNEZIA15_KEYS) {
+                    if (interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key]) {
+                        options[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
+                    }
+                }
+                for (const key of AMNEZIA_KEYS) {
+                    if (interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key]) {
+                        options[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
+                    }
+                }
+            }
+            let proxyName = peerData.name || fileName.replace('.conf', '');
+            const originalName = proxyName;
+            if (!proxyName) {
+                proxyName = `Random_${Math.random().toString(36).substr(2, 5)}`;
+            } else {
+                proxyName = proxyName.replace(/FREE#?/g, '').replace(/-$/, '');
+                const flagPattern = /(?:^|[^a-z])([a-z]{2})(?=[-_\s\d]|$)/gi;
+                const match = flagPattern.exec(proxyName);
+                if (match) {
+                    const countryCode = match[1].toUpperCase();
+                    if (COUNTRY_FLAGS[countryCode]) {
+                        proxyName = COUNTRY_FLAGS[countryCode].split(' ')[0] + ' ' + proxyName;
+                    }
+                }
+            }
+            const result = {
+                name: proxyName, originalName, type: "wireguard", server, port: parseInt(port),
+                ip: interfaceData.address, private_key: interfaceData.privatekey, public_key: peerData.publickey,
+                preshared_key: peerData.presharedKey, allowed_ips: peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`),
+                udp: true, mtu: 1420, remote_dns_resolve: true, dns: dnsList,
+                isDefaultAmnezia: !(interfaceData.amneziaOptions.jc || peerData.amneziaOptions.jc)
+            };
+            if (format === 'wiresocket') {
+                result['wiresocket-options'] = options;
+            } else {
+                result['amnezia-options'] = options;
+            }
+            return result;
+        }
+
+        function generateAmneziaOptionsYAML(options) {
+            const entries = Object.entries(options)
+                .filter(([key, value]) => value !== undefined && value !== '' && [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS].includes(key))
+                .map(([key, value]) => `    ${key}: ${value}`)
+                .join('\n');
+            return entries ? `  amnezia-wg-option:\n${entries}\n` : '';
+        }
+
+        function generateProxyGroups(proxies) {
+            if (proxies.length === 0) return '';
+            const proxyNames = proxies.map(proxy => `    - ${proxy.name}`).join('\n');
+            return `\n- name: DPI\n  type: select\n  proxies:\n${proxyNames}`;
+        }
+
+        function generateClashYaml() {
+            if (proxyList.length === 0) {
+                showToast('هیچ فایلی برای تبدیل پردازش نشده است.');
+                return;
+            }
+            const yamlProxies = proxyList.map(proxy => {
+                const parts = [
+                    `- name: ${proxy.name}`,
+                    `  type: ${proxy.type}`,
+                    `  server: ${proxy.server}`,
+                    `  port: ${proxy.port}`,
+                    `  ip: ${proxy.ip}`,
+                    `  private-key: ${proxy.private_key}`,
+                    `  public-key: ${proxy.public_key}`
+                ];
+                if (proxy.preshared_key) {
+                    parts.push(`  pre-shared-key: ${proxy.preshared_key}`);
+                }
+                parts.push(
+                    `  allowed-ips: [${proxy.allowed_ips.join(', ')}]`,
+                    `  udp: ${proxy.udp}`,
+                    `  mtu: ${proxy.mtu}`,
+                    `  remote-dns-resolve: ${proxy.remote_dns_resolve}`,
+                    `  dns: [${proxy.dns.join(', ')}]`,
+                    generateAmneziaOptionsYAML(proxy['amnezia-options'])
+                );
+                return parts.join('\n');
+            }).join('\n');
+            const proxyGroups = generateProxyGroups(proxyList);
+            const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${proxyGroups}`;
+            displayWgOutput(fullYaml, 'clash-config.yaml');
+        }
+
+        function generateSingleAWGConfig(proxy) {
+            const options = proxy['amnezia-options'] || {};
+            const configLines = [
+                `# ${proxy.originalName || 'Unnamed config'}`,
+                `[Interface]`,
+                `PrivateKey = ${proxy.private_key}`,
+                `Address = ${proxy.ip}`
+            ];
+            if (proxy.dns?.length > 0) {
+                configLines.push(`DNS = ${proxy.dns.join(', ')}`);
+            }
+            configLines.push(`MTU = ${proxy.mtu}`);
+            configLines.push(
+                `Jc = ${options.jc || 128}`,
+                `Jmin = ${options.jmin || 1279}`,
+                `Jmax = ${options.jmax || 1280}`,
+                `S1 = ${options.s1 || 0}`,
+                `S2 = ${options.s2 || 0}`,
+                `H1 = ${options.h1 || 1}`,
+                `H2 = ${options.h2 || 2}`,
+                `H3 = ${options.h3 || 3}`,
+                `H4 = ${options.h4 || 4}`
+            );
+            if (options.i1) configLines.push(`I1 = ${options.i1}`);
+            if (options.i2) configLines.push(`I2 = ${options.i2}`);
+            if (options.i3) configLines.push(`I3 = ${options.i3}`);
+            if (options.i4) configLines.push(`I4 = ${options.i4}`);
+            if (options.i5) configLines.push(`I5 = ${options.i5}`);
+
+            configLines.push(``, `[Peer]`, `PublicKey = ${proxy.public_key}`);
+            if (proxy.preshared_key) {
+                configLines.push(`PresharedKey = ${proxy.preshared_key}`);
+            }
+            configLines.push(
+                `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
+                `Endpoint = ${proxy.server}:${proxy.port}`
+            );
+            return configLines.join('\n');
+        }
+
+        function generateAWGYaml() {
+            if (proxyList.length === 0) {
+                showToast('هیچ اطلاعاتی برای پردازش موجود نیست.');
+                return;
+            }
+            const awgConfigs = proxyList.map(generateSingleAWGConfig);
+            const finalOutput = awgConfigs.join('\n\n');
+            displayWgOutput(finalOutput, 'amnezia.conf');
+        }
+
+        function generateSingleWiresocketConfig(proxy) {
+            const options = proxy['wiresocket-options'] || {};
+            const configLines = [
+                `# ${proxy.originalName || 'Unnamed config'}`,
+                `[Interface]`,
+                `PrivateKey = ${proxy.private_key}`,
+                `Address = ${proxy.ip}`
+            ];
+            if (proxy.dns?.length > 0) {
+                configLines.push(`DNS = ${proxy.dns.join(', ')}`);
+            }
+            configLines.push(`MTU = ${proxy.mtu}`);
+            configLines.push(
+                `Jc = ${options.jc || 128}`,
+                `Jmin = ${options.jmin || 1279}`,
+                `Jmax = ${options.jmax || 1280}`,
+                `S1 = ${options.s1 || 0}`,
+                `S2 = ${options.s2 || 0}`,
+                `H1 = ${options.h1 || 1}`,
+                `H2 = ${options.h2 || 2}`,
+                `H3 = ${options.h3 || 3}`,
+                `H4 = ${options.h4 || 4}`
+            );
+            if (options.id) configLines.push(`Id = ${options.id}`);
+            if (options.ip) configLines.push(`Ip = ${options.ip}`);
+            if (options.ib) configLines.push(`Ib = ${options.ib}`);
+
+            configLines.push(``, `[Peer]`, `PublicKey = ${proxy.public_key}`);
+            if (proxy.preshared_key) {
+                configLines.push(`PresharedKey = ${proxy.preshared_key}`);
+            }
+            configLines.push(
+                `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
+                `Endpoint = ${proxy.server}:${proxy.port}`
+            );
+            return configLines.join('\n');
+        }
+
+        function generateWiresocketConfigs() {
+            if (proxyList.length === 0) {
+                showToast('هیچ فایلی لود نشده است.');
+                return;
+            }
+            const configs = proxyList.map(generateSingleWiresocketConfig);
+            const finalOutput = configs.join('\n\n');
+            displayWgOutput(finalOutput, 'wiresock.conf');
+        }
+
+        function displayWgOutput(content, defaultFileName) {
+            document.getElementById('yamlOutput').value = content;
+            const dlBtn = document.getElementById('downloadBtn');
+            const cpBtn = document.getElementById('copyBtn');
+            dlBtn.classList.remove('hidden');
+            cpBtn.classList.remove('hidden');
+            
+            dlBtn.onclick = () => {
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = defaultFileName;
+                a.click();
+            };
+
+            cpBtn.onclick = () => {
+                navigator.clipboard.writeText(content).then(() => {
+                    showToast(i18n[currentLang].copied);
+                });
+            };
+        }
+
+        document.getElementById('wgFiles').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (!files.length) {
+                document.getElementById('confInput').disabled = false;
+                updateWgFileLabel();
+                return;
+            }
+            let loaded = 0;
+            let combinedText = "";
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    combinedText += String(reader.result).trim() + "\n\n";
+                    loaded++;
+                    if (loaded === files.length) {
+                        document.getElementById('confInput').value = combinedText.trim();
+                        document.getElementById('confInput').disabled = true;
+                    }
+                };
+                reader.readAsText(file);
+            });
+            updateWgFileLabel();
+        });
+
+        function updateWgFileLabel() {
+            const fileInput = document.getElementById('wgFiles');
+            const labelText = document.getElementById('fileList');
+            const count = fileInput.files ? fileInput.files.length : 0;
+            if (count === 0) {
+                labelText.innerText = i18n[currentLang].no_files;
+            } else {
+                labelText.innerText = i18n[currentLang].files_selected.replace('{count}', count);
+            }
+        }
+
+        function handleClearWg() {
+            document.getElementById('confInput').value = "";
+            document.getElementById('confInput').disabled = false;
+            document.getElementById('wgFiles').value = "";
+            document.getElementById('yamlOutput').value = "";
+            document.getElementById('downloadBtn').classList.add('hidden');
+            document.getElementById('copyBtn').classList.add('hidden');
+            proxyList = [];
+            updateWgFileLabel();
+        }
+
+        function convertWireguard() {
+            const selectedFormat = document.querySelector('input[name="option"]:checked')?.id;
+            const textInput = document.getElementById('confInput').value.trim();
+            if (selectedFormat === 'wiresocket') {
+                const wsId = document.getElementById('ws_id')?.value?.trim();
+                if (!wsId) {
+                    showToast(currentLang === 'fa' ? 'فیلد Id برای Wiresock الزامی است.' : 'Id field is required for Wiresocket.');
+                    return;
+                }
+            }
+            if (!textInput) {
+                showToast(i18n[currentLang].emptyInput);
+                return;
+            }
+            proxyList = [];
+            try {
+                const wgConfigs = parseMultipleWGConfigs(textInput);
+                wgConfigs.forEach((wgConfig, idx) => {
+                    const proxy = convertToProxy(wgConfig, `config_${idx + 1}.conf`, selectedFormat);
+                    proxyList.push(proxy);
+                });
+                
+                if (selectedFormat === 'clash') {
+                    generateClashYaml();
+                } else if (selectedFormat === 'awg') {
+                    generateAWGYaml();
+                } else if (selectedFormat === 'wiresocket') {
+                    generateWiresocketConfigs();
+                }
+                showToast(i18n[currentLang].successConvert);
+            } catch (error) {
+                showToast(error.message);
+            }
+        }
+
+        // ==========================================================================
+        //  Proton VPN Processing Methods
+        // ==========================================================================
+        function toggleProtonJunkContainer() {
+            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
+            document.getElementById('proton_junk_container').classList.toggle('hidden', nojunkEnabled);
+        }
+
+        function toggleProtonAWG15Containers() {
+            const awg15Enabled = document.getElementById('proton_awg15').checked;
+            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
+            
+            document.getElementById('proton_awg15_container').classList.add('hidden');
+            document.getElementById('proton_wiresock_container').classList.add('hidden');
+
+            if (awg15Enabled) {
+                if (selectedOption === 'proton_clash_radio' || selectedOption === 'proton_awg_radio') {
+                    document.getElementById('proton_awg15_container').classList.remove('hidden');
+                } else if (selectedOption === 'proton_karing_radio') {
+                    document.getElementById('proton_wiresock_container').classList.remove('hidden');
+                }
+            }
+            toggleProtonNolanContainer();
+            convertProton();
+        }
+
+        function toggleProtonNolanContainer() {
+            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
+            const nolanToggle = document.getElementById('proton_nolan');
+            if (selectedOption === 'proton_clash_radio') {
+                nolanToggle.disabled = true;
+                nolanToggle.checked = false;
+            } else {
+                nolanToggle.disabled = false;
+            }
+        }
+
+        function protonRandomJunk() {
+            const jc = getRandomInt(1, 100);
+            const jmin = getRandomInt(1, 200);
+            const jmax = getRandomInt(jmin + 1, 201);
+            document.getElementById('proton_jc1').value = jc;
+            document.getElementById('proton_jmin1').value = jmin;
+            document.getElementById('proton_jmax1').value = jmax;
+            document.getElementById('proton_junk3').checked = true;
+            convertProton();
+        }
+
+        function protonRandomAWG15() {
+            const hexPool = [
+                '<b 0xce000000010897a297ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135fa85e196d9ad980b150122129ce2a9379531b0fd3e871ca5fdb883c369832f730e272d7b8b74f393f9f0fa43f11e510ecb2219a52984410c204cf875585340c62238e14ad04dff382f2c200e0ee22fe743b9c6b8b043121c5710ec289f471c91ee414fca8b8be8419ae8ce7ffc53837f6ade262891895f3f4cecd31bc93ac5599e18e4f01b472362b8056c3172b513051f8322d1062997ef4a383b01706598d08d48c221d30e74c7ce000cdad36b706b1bf9b0607c32ec4b3203a4ee21ab64df336212b9758280803fcab14933b0e7ee1e04a7becce3e2633f4852585c567894a5f9efe9706a151b615856647e8b7dba69ab357b3982f554549bef9256111b2d67afde0b496f16962d4957ff654232aa9e845b61463908309cfd9de0a6abf5f425f577d7e5f6440652aa8da5f73588e82e9470f3b21b27b28c649506ae1a7f5f15b876f56abc4615f49911549b9bb39dd804fde182bd2dcec0c33bad9b138ca07d4a4a1650a2c2686acea05727e2a78962a840ae428f55627516e73c83dd8893b02358e81b524b4d99fda6df52b3a8d7a5291326e7ac9d773c5b43b8444554ef5aea104a738ed650aa979674bbed38da58ac29d87c29d387d80b526065baeb073ce65f075ccb56e47533aef357dceaa8293a523c5f6f790be90e4731123d3c6152a70576e90b4ab5bc5ead01576c68ab633ff7d36dcde2a0b2c68897e1acfc4d6483aaaeb635dd63c96b2b6a7a2bfe042f6aed82e5363aa850aace12ee3b1a93f30d8ab9537df483152a5527faca21efc9981b304f11fc95336f5b9637b174c5a0659e2b22e159a9fed4b8e93047371175b1d6d9cc8ab745f3b2281537d1c75fb9451871864efa5d184c38c185fd203de206751b92620f7c369e031d2041e152040920ac2c5ab5340bfc9d0561176abf10a147287ea90758575ac6a9f5ac9f390d0d5b23ee12af583383d994e22c0cf42383834bcd3ada1b3825a0664d8f3fb678261d57601ddf94a8a68a7c273a18c08aa99c7ad8c6c42eab67718843597ec9930457359dfdfbce024afc2dcf9348579a57d8d3490b2fa99f278f1c37d87dad9b221acd575192ffae1784f8e60ec7cee4068b6b988f0433d96d6a1b1865f4e155e9fe020279f434f3bf1bd117b717b92f6cd1cc9bea7d45978bcc3f24bda631a36910110a6ec06da35f8966c9279d130347594f13e9e07514fa370754d1424c0a1545c5070ef9fb2acd14233e8a50bfc5978b5bdf8bc1714731f798d21e2004117c61f2989dd44f0cf027b27d4019e81ed4b5c31db347c4a3a4d85048d7093cf16753d7b0d15e078f5c7a5205dc2f87e330a1f716738dce1c6180e9d02869b5546f1c4d2748f8c90d9693cba4e0079297d22fd61402dea32ff0eb69ebd65a5d0b687d87e3a8b2c42b648aa723c7c7daf37abcc4bb85caea2ee8f55bec20e913b3324ab8f5c3304f820d42ad1b9f2ffc1a3af9927136b4419e1e579ab4c2ae3c776d293d397d575df181e6cae0a4ada5d67ecea171cca3288d57c7bbdaee3befe745fb7d634f70386d873b90c4d6c6596bb65af68f9e5121e67ebf0d89d3c909ceedfb32ce9575a7758ff080724e1ab5d5f43074ecb53a479af21ed03d7b6899c36631c0166f9d47e5e1d4528a5d3d3f744029c4b1c190cbfbad06f5f83f7ad0429fa9a2719c56ffe3783460e166de2d8>',
+                '<b 0xc3000000010828cc76e6712c410c000044d0a2465e075ad0f01564ee338a44a2023493b8e15237b38843001050a4f4bf2a2cfb40695fe5ff42a70c0990053428d982902a32ca57e8b98909370223db26cd729039d5717f730c935603e2a1f7e452ebbeb6236f02198a9e5293322ab2895f935827f58ffe0a2ca638599a6218bc847fd5e1c801cd487cfb10d308156e7ce4c91cf522097cab6d079acc9e7ef18f231ee6ac13f7bd3d03db41dc27953d32d1aaa35932add5b567769a35fc7e3ec9175211afba7b945492b7f2e8b141c450585f09eb9c38a760b4f6fd36257830c47bd028f35ac1b00cbf6c59030d67363e28a8a2e70190a23fbcc10941537db75c01b82f8be3d0ba7fd0f9ab534a36dcefff49ecb9a63d3be1f14ab0376d4f9686fa6478816c183f07179778593821b89a035cfa92ec13c5cd2991180278ed125264fb3a512d0480a73d69218aad3477f2c741981da881a0146002435fd1f15a0c38715396ea6989b4275137f52ea5fd771e9dc0f552755062e21c996b36e97850bf70fce2f98d26837585d28219a7a30d0cc910ff04a920bb69c714c0142193f267d917aab11058f197a6a66cd752aff348d334186bf91a69843f3452b953fc732449c58dc8aa4bcac89aa661f90891da751978f17a62f7b8f847f440f7210dd05574dbd78e4feb4ac478f275f4044c7170f74221abdda3b8fc0c129ae35d3fabac349d81ba9042b4782819ea81665d06691195bd9e7abf6f0e065a092811e9ea5b113207ef06de5768ebe62e8ee94ae4beb5bc4f9996c2c70c7d620da7fedbb2b9709a45584b5ae0fdc1f746b4afc7f100bc2888611b46e2ac243e136bb100e9db3022f472aac8801e77d15960a031e3f8fea5cf8f8703bdb1357800adc802b702c547f4e5f75eb4b6e5eb9327876c77dcfb3baf696a276d6779ab337fc1aa0b03222a6acda0b04a4220f77fd04ce14f083445e55ff88260834582531d759683e1b2d8abc885664cfba1f49f9bdcf26fca845fde45a0ca08a90794cf70338f1031c5098664f10e830d5b3437c7c367c8a0faa16d81471111b616b2f710edfcab27f5f1a7a33daa20ea6e8e5dcd624c6d8f2c048543d025eb970a8eb8aa09c8b4d0be42d6426961a624e37366c21b7e6ca24d09aa3e46a03e3dfc09eafd9d213752b2ca903d11626eb672d5dc116507c6cd2e43f59a6c964937cd9d8f1e54b05f4486c780c46a5718a3baedf93a5cd9b374097bc6db16aa272b6e0a935b35c3f721e206804c45ec5b4a4dadfbb28a9bd08d4a1590f05ef21185c00f8ca250fb31fe549845d39b6ced2e64c00ad5dac27d550313ac778a981a8b5ce2290bb2d90a50717f004d66ff122a395bba9fc67d38bfbfd549389622431afd241ce7a0d755e7016ee37ada01b09e51f4f39aa3785cc162726d23ad98e1f6d1f4346bd221b7401334d89c07e1ede4aec076933ae6d39bddef5d76e7d1fe8053fb1aca8c35d61b60648c5a1487365b0ca365c1689d8fbfc2267f24cbf90474c92be350f5e664b01ef1c8538b25296d643ceed009cb5da29c0a451be67ef626237066946379385f9c79276117598cd462ac0221fe93a46034df330144f9ccfc5d8560e8df7b19849cf7d65b79f21d3f05f61496ac7da3ffaf87b14171cb7e959c3e98fdef862f7cbf9eaebae74b1c9b09d102bff1fc82e0cf32c96b4dcc5cba0d7d3555bc8a5c722965af0c0c2f0dbb24ca1cbde23cfcd39ce86ecffe102f48cf657833fe578e5439>', '<b 0xce000000010801bb8fd47f76e35a000044d0506fda47bd5feb11d112f0f4faac71f58212d234a6c10dba88715411aa0444f4797e1fcab030a5c527e7c7b8f995357a2adc0300aa89ee67d840dfa49fe175ade73ed5ff4e93a3478a6ac9b7a30aa423852a16bdc005dc1529d1531a7a721bdf9a374c54d0fbd847e4e1ab9b16f59f79bf47c2160493b8a6782ec37e418398fc4db3d2ca4315d4df833144246faa9fea16f41a9f4f71954f16e61c4a9335486044f196e202794dacb39e25cebfa95eb18d9cb576b5ca69062dbf7261b004ff46a36cf8ad32365b3e640c9e7247a4a620c6db308386f9d7ee36fb01fce5ca7dd1e47902c6013e695a3741c28a21af9c57274e009923e7028fc16cfdd3a0f4b2aa647798592271ff17307f629b5ee0b3f874305f1edd0c95ac81a7a965cf39062c70ed36d6e734e6f456266b52a02fa9f8ce4763832f75e6ebad3c75eb61e95e660347e3dcdcb41968370dbd6765ee4f80e020de0725b5847656db58fac5ddc097201f7178fd686020d492c8fe5bbd43d64335047976760c3fdabcc49a6b637660866afba983e657b1a05c64718a15c0599481a7d6ea923eacde9392dce535dde5584dff91b975246bac444972b98f95a54d9a50c94b07aef84cb538c6fd3808205120e6a0b64289a6e3934bc0847712ccf6b76ce725f0899e952c18c0b6743eb629e187a5a2457f1ac700cf7e53616fc239331e09c52265af4219d3bccd203f9af1d14554fc836a12df0076f71d7c7e38233239faf9a1d7ea77a09c602290a186e78ddf379ee353d51a3b12bbd3552362bd2f165a91c5a3e4c5d29f0a38dd295d9c1abbbce33b1a5a105c6fe409c674bac10aacff349229f40c8f27b4332564ae1cfdbf48807ee3d562f8793efa7e81f7dec9640f5a2d1be2d9cff30b7d247abdb4c2a7f5fb5ae24cc884416deac3b4f30b6031c820dd2c378a3b54746416b6963a52c7661953c36a03e96f3d3e039c8d97534f8643b23dea6fb2d57e243011b56e72a25f0872a699cabfc5154f1769888b289d001d108a24097c810be0029af7cf22d5a9ce2b5dd077a6ad46952387113af426f4ae9cfa2c6723d37510d31a9b2b2a3cb013badf5a9eec7337f311a128f3661233d23ee93c4f8677002081dd68be9ec0fd9dabb927bdf73dfb22a3ea670d27a47dd7c12aab429afe9b88b97431104fdd8bcdd7b3663f1e43414ced191d66be0570b3a84e7907aa6a46875364a7df197f10983fe8dc4be8beadba8f670fa58a3dd75c27c66880a1c0dcc947274d6d77113cbf39476d7a3826e491bcf592c30989fe00c00823180c014d0fa2bb535752f2c73bcd8a9e258cff0a5906574d1e710e9e232a9f5d8022b354d25d029fd9c9d7b2e039963b661ce28a1a69b58936fb66398be425ce895c2a1e9d6090bf3e1267a003b30093088d41520b549f03bca5b4ff5ba18b7edb10bb4747a5146aa6a261226736b2c4bb0074fe7a0b3d3af693081d28f014981444728a85f6e0d4aa6566bd748ef8416526e638446806fa36c18558b818517add83a59d442d20bc09dc492cbe563b36e1fa02f218ed6ec650ffe6303b161ab4094d048b2d9cda27a0ebbff818cca884faaa16ab3efbde753b96f672777a58d16322a540a73c74a8611eb64054f7334f33d960726de23fe0e53d564714f085e270d2167a45521aadbdc5fac6192c25559c1f8f9ca66984a29863e1f9f799541484a4f361ee95a7b1e49912d2e538e5016235c8f7d0bc93f5>','<b 0xc70000000108df2b1b6970a3feeb000044d0ed2f8959a3b417c660df11a4450acf495f1cc1769fd0a540acbe890d40b5fdca6a2a4e815be972b62c55b5bd0cabf1912e79770f5144aadf2489a8bba6cf68cc4db1d8cec0a6d8e855e3f2a799632d9e705f05a99f09ca1d392de1228e0433f5a56d58772076d1f6c1a91e470a970074b7055425d19244e6eb9757bc10287d0267e02fd2b825a849187f848c89e44b182be8563f5a489d5722b68f7c5c0bc76895f9dff4bd955160001012deb3439dd93fa282df25377e9d00c960b6e48f9ca55f0cc97b4f0d3f034956c9df7fafca1b0c4bd313fe576c4bfecb8205765509ecab8c442a4bd4c483374b9ef328b77caf063ee13db140f7946a3d61e0cb8b083b91991d08db544baff4678b327b015b95db8bc90e28d604d927a1da4392d23093a214ca713e65b66e87d7ffb88664f77167db4ac6560a4ebbee324ff964a9949149782dd5d49594aaddcb752ad1f6eafbb84360175bd9529e1467f53ffbe9044b40e0fee663e8c589893b3ceab34a777e81c5971e88cc923bf0203e6ff2414de93ba98dba342269c6230c2cbf3bd48ea0bfaebf19597957078540122e7c461d151f2a25d7148e2c4f599c95caca321aa02aea7e583b01b07fc89c9e3945fa0ac57d894621197549c4862259981074cf4d077896e676dded2504904f54e291591bcc1118ccb7618ae21b35620c4ec8f8f1a26c1adb5ad9c9b63fbc5795f1997f37ae9ac5467267e7a63e4b21f798b404e78db54d987700550495f2f95529223d7297a4d5857340285624510dbe60276acbb56ec535bb09ce6fe14aa4448d7d1e5b76fb8ae7839c23259d5abb576980dc8ad2b4baf2359c6398452e6615099e87f8b9ca234ee6857713d2319d36020ed040245bd435d50af58216e1a6afb89b1e23240ee6554307475da43962c955eabe87d19f3614c5b60a110da771dd49a47b521af4cf4d4a5e29be93c6c9601c44b6d6c21a750c56c2fec3c9b744ad8496a3fb640ae7ce5a625f78c2d20a38f09cbae8ef0d1e1516470c1bc9bd86ab5596026dda6967a165cc29bd274bc69e5d5250b4c2d77ea79b057083edad33bf94f4f8eb57c6578d987615f3b37b934e18fc6c76d1ce3361ec9aaea32a7acc40bf1939c1e928dbd6b1741486d3b87b37e1c77207f70debee025caa6c4d6605b2b76d42429895f7376230299e644361c6c4ac2769009016192ea88d7cd2fbd2263fe8a19e38edc562fc14cf207128a757a672daf53af301c12d1b2e7ca1ba3305613baa482845253bd7dd0394e8c8bfdfb4227ab7a22112ef2194161a6b92fb7eaadb6974246beee5e578d84182fbcfd24a05d11860a86e445d91cd2fb32c2913100a3657191ff17d6f02a8c554753ed07e9f0a6c944dc380ca3b1fa6a432db7d63c4235e9a473dbfbe09a7a9bc7713a95c9fedc3911ba0caa2f26e981eef132e58b395b904f8542824b7a3af44e40543a0ce227d88abedd936252a6c7f77d4c5d40906e6ff269b3aac3653260da037e65f8fea00d597f3ca9d082a36f07cbc209032b84b975034ea817da90e89bff1ce8b534dc8c3b1f9445454db7411c88bc3804925b3c2b6f7ecddc309d451cd6ade1b716f83990d37c1df0a44bdd9b49eebe8abe5d3294bfc14485e30823cd20cced0c1f4549a8c07e6c2161305ea92a6e45250305bf559f629f325d03e5d6482ea4bf5953ece20514374cda7878c955c51c5c6fd79e053d64e354b8c01858409e2fb928896>', '<b 0xc0000000010892b06b4ebbca0bc7000044d057c592e23d34c9c3deca7a7cd33a1db8a4f853b48ab16f04e3c7fd20807f9b80954c849cac06879170c668ce2055d423bda127002d560066c2687ff3b688125269defb288ece048019c9812c55fbb016cf95fd73fd428b1f2efdd7e10c174fd1e6757a347214b443105777429c8cddd2e1fc77856fc41cabfc4781eca3027ecd073c7e4dd4e688e47f3d5d4831a37d0059f89bdcf055f11184725db456dcda8d0d3ee0e2f5dd4ce6aa039099e95b8c966210cb35dd4f7437e6e68d64c0d5d33aef8523af522e03de47ea6bb43b8bf1a96fc16ff4fd76d8a4c338f88360f69aed686fd82be98f17abb94ac63a0d9210840a4528ef25f91e7a0d91b6223e9b06b75465c94dd7e28f4194d25bab33ec618813c614a654b9dd420c2729e0202fbaf26e11268b6e50f2287452c3c81dacef3d98db8b7f4144bf70d70f6d72614167509afc874843843cbb73b302997cdafadd41850b0cb99a0b272b06e2c0001e6fda4fee44036b62ce27aea485a39a33c48e0ce97a7977c76d140f7df98b1a1cc46631a905041c76682dd2a8e07ab784f92d44c172d13405c3d87232aa539187c38d82096c17f5ccf76299465be7d25e81cf4bab3092846f158bec336d661cdd232b41b91fb50610e9113bc355dd92e404b7d91b288069397627c723202860658d995e94d4fefc005dda2df80d757aa5bc7a233b4b5807ccf28ebefcf6f70f8c513c55d5e9ff658e51583a0e460724db85b1e61891638817793542d5520a1d2536e08ddda1c11ba28173d7371d0bf6dde4a3aa4b826af64d307d97d471f5665f328af478abc70b8cefc24a0a90a6ed5caae5c4ce25167598600333943731aea8324e985ada2ab7ab1ea428ff8d3ecf8b272690e5b0ea1c5b4aa827b812cc5dd0b970b18ac88061a44255f5f638651ba5286d1decb8596b26f87730cd5de955f54a331f15e0c3edfea2b354e8418ac5c113f9dab98cd3822d7bc72cf29511abcdd56712f270f15419d1bab3b7e4a9320f41849e42b7ce3717c38f3b207867714a808f4f964fd4e51440a607b6efcef650cc7719227376b165e929c382ca943527c66e274ae9da0840b8f91f2d581a92e0c013155b4395f4c459e5e5089f9c3638098763d9485223d96c20e964e5bbec40c6fd920d746539dbca1ffdf1fbdeefa2256e7c8622566bbcfa0b60a573a13b6452e6b7ffe312c43475563fa5227fd50d450c022a6b46fb0f43a432dd84390ee337f6107bde0f4aecf0d58b3be6a5fb2b0e65bea782202f05ff145fb2561cbb29a536cd40bbb9058b673501798484af393423d84756af0a9813ef355c09f3112b80cb785b567aa36d7055a08e475c369c1c750c7c937655486075145863d29424a2442d3ea935e04c21d486d9c476f969dbc862d8e72e50b1c9880703a892f1d78a56ac336ac43e0a73de92bbbbc6d27b15f8ede377a43d39ba6f3c78b68da50a1f12bd8066bb572673210c6971f59af59d7c17245968b7f0d2fe8e9f141aaf99e6de7e0e9208d7a6dc83b9d9846bb0d01684ba9f1c9cdf07698549566466c20fc7cf2c679fc7aedeac59f534cd68e2e9ce7181fd9137f38431e708627101f3bf76a849ba5add5cf33508c8858e0ac587050eaecdf7e479a88eba4cc08d22d0c37cf12ce115eb4ee7a99302692d5cff8446486db739fa5db193a798776f879aabdffe5a3df911f7eb0a7e9b01d1fb7fad1392c9e4be307c329f7120edb4186c457f58>'];
+            const randomHex = hexPool[Math.floor(Math.random() * hexPool.length)];
+            document.getElementById('proton_i1').value = randomHex;
+            document.getElementById('proton_i2').value = '';
+            document.getElementById('proton_i3').value = '';
+            document.getElementById('proton_i4').value = '';
+            document.getElementById('proton_i5').value = '';
+            convertProton();
+        }
+
+        function protonRandomWiresock() {
+            const domains = ['apteka.ru', 'psbank.ru', 'lenta.ru', 'rzd.ru', 'rutube.ru', 'gosuslugi.ru'];
+            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+            document.getElementById('proton_id').value = randomDomain;
+            convertProton();
+        }
+
+        function openDomainModal() {
+            document.getElementById('domainModal').style.display = 'flex';
+        }
+
+        function closeDomainModal() {
+            document.getElementById('domainModal').style.display = 'none';
+        }
+
+        async function generateI1FromDomain(domain) {
+            let hash = 0;
+            for (let i = 0; i < domain.length; i++) {
+                hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hex = Math.abs(hash).toString(16).padEnd(8, 'a');
+            return `<b 0xc60000000108${hex}97ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135f>`;
+        }
+
+        async function confirmDomainModal() {
+            const domain = document.getElementById('proton_domain_input').value.trim();
+            if (domain) {
+                const i1Val = await generateI1FromDomain(domain);
+                document.getElementById('proton_i1').value = i1Val;
+                closeDomainModal();
+                convertProton();
+            } else {
+                showToast(currentLang === 'fa' ? 'لطفاً دامنه معتبری وارد کنید.' : 'Please enter a valid domain.');
+            }
+        }
+
+        document.getElementById('proton_wgFiles').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (!files.length) {
+                updateProtonFileLabel();
+                return;
+            }
+            let loaded = 0;
+            let combinedText = "";
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    combinedText += String(reader.result).trim() + "\n\n";
+                    loaded++;
+                    if (loaded === files.length) {
+                        document.getElementById('proton_confInput').value = combinedText.trim();
+                        convertProton(); 
+                    }
+                };
+                reader.readAsText(file);
+            });
+            updateProtonFileLabel();
+        });
+
+        function updateProtonFileLabel() {
+            const fileInput = document.getElementById('proton_wgFiles');
+            const labelText = document.getElementById('proton_fileList');
+            const count = fileInput.files ? fileInput.files.length : 0;
+            if (count === 0) {
+                labelText.innerText = i18n[currentLang].no_files;
+            } else {
+                labelText.innerText = i18n[currentLang].files_selected.replace('{count}', count);
+            }
+        }
+
+        function handleClearProton() {
+            document.getElementById('proton_confInput').value = "";
+            document.getElementById('proton_wgFiles').value = "";
+            document.getElementById('proton_yamlOutput').value = "";
+            document.getElementById('proton_downloadBtn').classList.add('hidden');
+            document.getElementById('proton_copyBtn').classList.add('hidden');
+            protonProxyList = [];
+            updateProtonFileLabel();
+        }
+
+        function generateProtonAmneziaDefaults() {
+            const selectedOption = document.querySelector('input[name="proton_junk"]:checked')?.id;
+            let jc, jmin, jmax;
+            switch(selectedOption) {
+                case 'proton_junk1':
+                    jc = 3; jmin = 1; jmax = 3;
+                    break;
+                case 'proton_junk2':
+                    jc = 30; jmin = 10; jmax = 30;
+                    break;
+                case 'proton_junk3':
+                    jc = parseInt(document.getElementById('proton_jc1').value) || 128;
+                    jmin = parseInt(document.getElementById('proton_jmin1').value) || 1279;
+                    jmax = parseInt(document.getElementById('proton_jmax1').value) || 1280;
+                    break;
+                default:
+                    jc = 128; jmin = 1279; jmax = 1280;
+            }
+            if (jmax <= jmin) jmax = jmin + 1;
+            return { jc, jmin, jmax, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4 };
+        }
+
+        function convertToProtonClashProxy(wgConfig, fileName) {
+            const { interface: interfaceData, peers } = wgConfig;
+            const peerData = peers[0];
+            const dnsList = interfaceData.dns ? interfaceData.dns.split(',').map(d => d.trim()) : [];
+            const defaultAmnezia = generateProtonAmneziaDefaults();
+
+            let proxyName = peerData.name || fileName.replace('.conf', '');
+            let originalName = proxyName;
+            
+            if (!proxyName) {
+                proxyName = `Proton_${Math.random().toString(36).substr(2, 5)}`;
+            } else {
+                proxyName = proxyName.replace(/FREE#?/g, '').replace(/-$/, '');
+                const flagMatch = proxyName.match(/^([A-Z]{2})[-_]/);
+                if (flagMatch && COUNTRY_FLAGS[flagMatch[1]]) {
+                    proxyName = proxyName.replace(flagMatch[1], COUNTRY_FLAGS[flagMatch[1]]);
+                }
+            }
+
+            const addresses = interfaceData.address.split(',').map(addr => addr.trim());
+            let ipv4 = '', ipv6 = '';
+            addresses.forEach(addr => {
+                if (addr.includes(':')) ipv6 = addr;
+                else ipv4 = addr;
+            });
+
+            const amneziaOptions = {};
+            for (const key of ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']) {
+                amneziaOptions[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key] || defaultAmnezia[key];
+            }
+
+            return {
+                name: proxyName, originalName, type: "wireguard",
+                server: peerData.endpoint.split(':')[0], port: parseInt(peerData.endpoint.split(':')[1]),
+                ip: interfaceData.address, ipv4, ipv6,
+                private_key: interfaceData.privatekey, public_key: peerData.publickey,
+                preshared_key: peerData.presharedKey, allowed_ips: peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`),
+                udp: true, mtu: 1420, remote_dns_resolve: true, dns: dnsList,
+                'amnezia-wg-option': amneziaOptions
+            };
+        }
+
+        function generateProtonAmneziaOptionsYAML(options) {
+            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
+            const awg15Enabled = document.getElementById('proton_awg15').checked;
+            let yaml = '  amnezia-wg-option:\n';
+            if (!nojunkEnabled) {
+                for (const [key, value] of Object.entries(options)) {
+                    yaml += `    ${key}: ${value}\n`;
+                }
+            }
+            if (awg15Enabled) {
+                const i1 = document.getElementById('proton_i1').value.trim() || '';
+                const i2 = document.getElementById('proton_i2').value.trim();
+                const i3 = document.getElementById('proton_i3').value.trim();
+                const i4 = document.getElementById('proton_i4').value.trim();
+                const i5 = document.getElementById('proton_i5').value.trim();
+                if (i1) yaml += `    i1: ${i1}\n`;
+                if (i2) yaml += `    i2: ${i2}\n`;
+                if (i3) yaml += `    i3: ${i3}\n`;
+                if (i4) yaml += `    i4: ${i4}\n`;
+                if (i5) yaml += `    i5: ${i5}\n`;
+            }
+            return yaml;
+        }
+
+        function generateProtonProxyGroups(proxies) {
+            const groups = [];
+            const protonProxies = [];
+            const otherProxies = [];
+
+            proxies.forEach(proxy => {
+                const isProton = /(^|[_-])([A-Z]{2})([-_]FREE)?([#_-]|$)/i.test(proxy.originalName || proxy.name);
+                if (isProton) protonProxies.push(proxy.name);
+                else otherProxies.push(proxy.name);
+            });
+
+            if (protonProxies.length > 0) {
+                groups.push(`\n- name: Proton\n  type: select\n  proxies:\n    - ${protonProxies.join('\n    - ')}`);
+            }
+            if (otherProxies.length > 0) {
+                groups.push(`\n- name: Other\n  type: select\n  proxies:\n    - ${otherProxies.join('\n    - ')}`);
+            }
+            return groups.join('\n');
+        }
+
+        function convertProton() {
+            const textInput = document.getElementById('proton_confInput').value.trim();
+            if (!textInput) return;
+
+            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
+            protonProxyList = [];
+
+            try {
+                const wgConfigs = parseMultipleWGConfigs(textInput);
+                wgConfigs.forEach((wgConfig, idx) => {
+                    const proxy = convertToProtonClashProxy(wgConfig, `proton_config_${idx + 1}.conf`);
+                    protonProxyList.push(proxy);
+                });
+
+                if (selectedOption === 'proton_clash_radio') {
+                    generateProtonClashYaml();
+                } else {
+                    generateProtonAWGYaml();
+                }
+            } catch (error) {
+                showToast(error.message);
+            }
+        }
+
+        function generateProtonClashYaml() {
+            if (protonProxyList.length === 0) return;
+            const yamlProxies = protonProxyList.map(proxy => {
+                let yaml = `- name: ${proxy.name}\n`;
+                yaml += `  type: ${proxy.type}\n`;
+                yaml += `  server: ${proxy.server}\n`;
+                yaml += `  port: ${proxy.port}\n`;
+                yaml += `  ip: ${proxy.ipv4}\n`;
+                if (proxy.ipv6) yaml += `  ipv6: ${proxy.ipv6}\n`;
+                yaml += `  private-key: ${proxy.private_key}\n`;
+                yaml += `  public-key: ${proxy.public_key}\n`;
+                yaml += `  allowed-ips: [${proxy.allowed_ips.join(', ')}]\n`;
+                if (proxy.preshared_key) yaml += `  pre-shared-key: ${proxy.preshared_key}\n`;
+                yaml += `  udp: ${proxy.udp}\n`;
+                yaml += `  mtu: ${proxy.mtu}\n`;
+                yaml += `  remote-dns-resolve: ${proxy.remote_dns_resolve}\n`;
+                yaml += `  dns: [${proxy.dns.join(', ')}]\n`;
+                yaml += generateProtonAmneziaOptionsYAML(proxy['amnezia-wg-option']);
+                return yaml;
+            }).join('\n');
+
+            const proxyGroups = generateProtonProxyGroups(protonProxyList);
+            const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${proxyGroups}`;
+            displayProtonOutput(fullYaml, 'proton-clash.yaml');
+        }
+
+        function generateSingleProtonAWGConfig(proxy) {
+            const amneziaOptions = proxy['amnezia-wg-option'];
+            const awg15Enabled = document.getElementById('proton_awg15').checked;
+            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
+            const nolanEnabled = document.getElementById('proton_nolan').checked;
+            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
+
+            let awgConfig = proxy.originalName ? `# ${proxy.originalName}\n` : `# Proton Config\n`;
+            awgConfig += `[Interface]\nPrivateKey = ${proxy.private_key}\nAddress = ${proxy.ip}\n`;
+            if (proxy.dns && proxy.dns.length > 0) awgConfig += `DNS = ${proxy.dns.join(', ')}\n`;
+            awgConfig += `MTU = ${proxy.mtu}\n`;
+
+            if (!nojunkEnabled) {
+                awgConfig += `S1 = 0\nS2 = 0\n`;
+                awgConfig += `Jc = ${amneziaOptions.jc}\n`;
+                awgConfig += `Jmin = ${amneziaOptions.jmin}\n`;
+                awgConfig += `Jmax = ${amneziaOptions.jmax}\n`;
+                awgConfig += `H1 = ${amneziaOptions.h1}\n`;
+                awgConfig += `H2 = ${amneziaOptions.h2}\n`;
+                awgConfig += `H3 = ${amneziaOptions.h3}\n`;
+                awgConfig += `H4 = ${amneziaOptions.h4}\n`;
+            }
+
+            if (awg15Enabled) {
+                if (selectedOption === 'proton_awg_radio') {
+                    const i1 = document.getElementById('proton_i1').value.trim() || '';
+                    const i2 = document.getElementById('proton_i2').value.trim();
+                    const i3 = document.getElementById('proton_i3').value.trim();
+                    const i4 = document.getElementById('proton_i4').value.trim();
+                    const i5 = document.getElementById('proton_i5').value.trim();
+                    if (i1) awgConfig += `I1 = ${i1}\n`;
+                    if (i2) awgConfig += `I2 = ${i2}\n`;
+                    if (i3) awgConfig += `I3 = ${i3}\n`;
+                    if (i4) awgConfig += `I4 = ${i4}\n`;
+                    if (i5) awgConfig += `I5 = ${i5}\n`;
+                } else if (selectedOption === 'proton_karing_radio') {
+                    const idVal = document.getElementById('proton_id').value.trim() || 'ozon.ru';
+                    const ipVal = document.getElementById('proton_ip').value || 'quic';
+                    const ibVal = document.getElementById('proton_ib').value || 'curl';
+                    awgConfig += `Id = ${idVal}\nIp = ${ipVal}\nIb = ${ibVal}\n`;
+                }
+            }
+
+            awgConfig += `\n[Peer]\nPublicKey = ${proxy.public_key}\n`;
+            if (proxy.preshared_key) awgConfig += `PresharedKey = ${proxy.preshared_key}\n`;
+
+            if (nolanEnabled && selectedOption !== 'proton_clash_radio') {
+                awgConfig += `AllowedIPs = 1.0.0.0/8, 2.0.0.0/7, 4.0.0.0/6, 8.0.0.0/7, 11.0.0.0/8, 12.0.0.0/6, 16.0.0.0/4, 32.0.0.0/3, 64.0.0.0/3, 96.0.0.0/4, 112.0.0.0/5, 120.0.0.0/6, 124.0.0.0/7, 126.0.0.0/8, 128.0.0.0/3, 160.0.0.0/5, 168.0.0.0/8, 169.0.0.0/9, 169.128.0.0/10, 169.192.0.0/11, 169.224.0.0/12, 169.240.0.0/13, 169.248.0.0/14, 169.252.0.0/15, 169.255.0.0/16, 170.0.0.0/7, 172.0.0.0/12, 172.32.0.0/11, 172.64.0.0/10, 172.128.0.0/9, 173.0.0.0/8, 174.0.0.0/7, 176.0.0.0/4, 192.0.0.0/9, 192.128.0.0/11, 192.160.0.0/13, 192.169.0.0/16, 192.170.0.0/15, 192.172.0.0/14, 192.176.0.0/12, 192.192.0.0/10, 193.0.0.0/8, 194.0.0.0/7, 196.0.0.0/6, 200.0.0.0/5, 208.0.0.0/4, 224.0.0.0/4, ::/1, 8000::/2, c000::/3, e000::/4, f000::/5, f800::/6, fe00::/9, fec0::/10, ff00::/8\n`;
+            } else {
+                awgConfig += `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}\n`;
+            }
+            awgConfig += `Endpoint = ${proxy.server}:${proxy.port}\n`;
+            return awgConfig;
+        }
+
+        function generateProtonAWGYaml() {
+            if (protonProxyList.length === 0) return;
+            const awgConfigs = protonProxyList.map(proxy => generateSingleProtonAWGConfig(proxy));
+            const finalOutput = awgConfigs.join('\n\n');
+            displayProtonOutput(finalOutput, 'proton-amnezia.conf');
+        }
+
+        function displayProtonOutput(content, defaultFileName) {
+            document.getElementById('proton_yamlOutput').value = content;
+            const dlBtn = document.getElementById('proton_downloadBtn');
+            const cpBtn = document.getElementById('proton_copyBtn');
+            dlBtn.classList.remove('hidden');
+            cpBtn.classList.remove('hidden');
+
+            dlBtn.onclick = () => {
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = defaultFileName;
+                a.click();
+            };
+
+            cpBtn.onclick = () => {
+                navigator.clipboard.writeText(content).then(() => {
+                    showToast(i18n[currentLang].copied);
+                });
+            };
+        }
+
+        updateLanguage();
+    </script>
+</body>
+</html>

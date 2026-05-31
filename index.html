@@ -698,7 +698,7 @@
         <div class="menu-bar">
             <div class="menu-item" onclick="toggleLanguage()">Language: <span id="langText">EN</span></div>
             <div class="menu-item" onclick="toggleTheme()" id="btnThemeToggle">Theme Mode</div>
-            <div class="menu-item" onclick="resetAllSystems()" data-i18n="menuReset">ریست کلی</div>
+            <div class="menu-item" onclick="resetAllSystems()" data-i18n="menuReset">Reset All</div>
             <div class="menu-item" id="menuHelpLink" onclick="openV2rayHelp()" data-i18n="menuHelp">Help</div>
         </div>
         
@@ -1162,7 +1162,7 @@
           "BR": "🇧🇷 BR", "IN": "🇮🇳 IN", "MX": "🇲🇽 MX", "ZA": "🇿🇦 ZA",
           "RU": "🇷🇺 RU", "KR": "🇰🇷 KR", "NO": "🇳🇴 NO", "DK": "🇩🇰 DK",
           "FI": "🇫🇮 FI", "NZ": "🇳🇿 NZ", "IE": "🇮🇪 IE", "AT": "🇦🇹 AT",
-          "BE": "🇧🇪 BE", "CZ": "🇨🇿 CZ", "PT": "🇵🇹 PT", "TR": "🇹🇷 TR",
+          "BE": "🇧🇪 BE", "CZ": "🇨🇿 CZ", "PT": "🇵🇹 PT", "TR": "🇹راق TR",
           "UA": "🇺🇦 UA", "AR": "🇦🇷 AR", "CL": "🇨🇱 CL", "CO": "🇨🇴 CO",
           "TH": "🇹🇭 TH", "MY": "🇲🇾 MY", "ID": "🇮🇩 ID", "AE": "🇦🇪 AE",
           "SA": "🇸🇦 SA", "IL": "🇮🇱 IL", "EG": "🇪🇬 EG"
@@ -1176,6 +1176,32 @@
         let currentActiveApp = 'v2ray'; 
         let proxyList = []; 
         let protonProxyList = []; 
+
+        // --- Base64 Safe Decoding/Encoding Helpers (integrated from jstovless.html) ---
+        function safeAtob(str) {
+            try {
+                let cleaned = str.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+                while (cleaned.length % 4) {
+                    cleaned += '=';
+                }
+                const decoded = atob(cleaned);
+                try {
+                    return decodeURIComponent(escape(decoded));
+                } catch(e) {
+                    return decoded;
+                }
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function safeBtoa(str) {
+            try {
+                return btoa(unescape(encodeURIComponent(str)));
+            } catch (e) {
+                return btoa(str);
+            }
+        }
 
         // --- Bilingual Dictionary ---
         const i18n = {
@@ -1211,7 +1237,7 @@
                 pasted: "با موفقیت جایگذاری شد.",
                 pasteErr: "دسترسی به کلیپ‌بورد ممکن نیست. لطفاً به صورت دستی جایگذاری کنید.",
                 menuHelp: "Help",
-                menuReset: "ریست کلی",
+                menuReset: "Reset All",
                 helpTitle: "ارتباط با ما",
                 v2rayHelpTitle: "راهنمای استفاده از مبدل V2Ray",
                 wgHelpTitle: "راهنمای مبدل WireGuard",
@@ -1412,7 +1438,7 @@
             }
         }
 
-        // --- Improved Clipboard Paste Handling with Native Prompt Fallback ---
+        // --- Improved Clipboard Paste Handling with Native Prompt Fallback (Merged) ---
         async function pasteFromClipboard() {
             let pastedText = "";
             try {
@@ -1552,7 +1578,7 @@
         }
 
         // ==========================================================================
-        //  V2RAY Processing Methods
+        //  V2RAY Processing Methods (Sourced & Updated from jstovless.html)
         // ==========================================================================
         async function fetchSubscription() {
             const urlInput = document.getElementById('subUrlInput').value.trim();
@@ -1581,7 +1607,7 @@
                     processedContent = decoded;
                 }
                 document.getElementById('mainInput').value = processedContent;
-                showToast(currentLang === 'fa' ? 'اطلاعات با موفقیت دریافت و رمزگشایی شد.' : 'Subscription content fetched successfully.');
+                showToast(currentLang === 'fa' ? 'اطلاعات با موفقیت دریافت و رمزگشایی شد.' : 'Subscription content fetched & decoded successfully.');
             } catch (error) {
                 showToast(i18n[currentLang].fetchErr);
             } finally {
@@ -2123,6 +2149,12 @@
             return result;
         }
 
+        function generateAmneziaDefaults() {
+            return {
+                jc: 128, jmin: 1279, jmax: 1280, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4
+            };
+        }
+
         function generateAmneziaOptionsYAML(options) {
             const entries = Object.entries(options)
                 .filter(([key, value]) => value !== undefined && value !== '' && [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS].includes(key))
@@ -2161,7 +2193,7 @@
                     `  mtu: ${proxy.mtu}`,
                     `  remote-dns-resolve: ${proxy.remote_dns_resolve}`,
                     `  dns: [${proxy.dns.join(', ')}]`,
-                    generateAmneziaOptionsYAML(proxy['amnezia-options'])
+                    generateAmneziaOptionsYAML(proxy['amnezia-options'] || {})
                 );
                 return parts.join('\n');
             }).join('\n');
@@ -2662,7 +2694,7 @@
                 yaml += `  mtu: ${proxy.mtu}\n`;
                 yaml += `  remote-dns-resolve: ${proxy.remote_dns_resolve}\n`;
                 yaml += `  dns: [${proxy.dns.join(', ')}]\n`;
-                yaml += generateProtonAmneziaOptionsYAML(proxy['amnezia-wg-option']);
+                yaml += generateProtonAmneziaOptionsYAML(proxy['amnezia-wg-option'] || {});
                 return yaml;
             }).join('\n');
 
@@ -2672,7 +2704,7 @@
         }
 
         function generateSingleProtonAWGConfig(proxy) {
-            const amneziaOptions = proxy['amnezia-wg-option'];
+            const amneziaOptions = proxy['amnezia-wg-option'] || {};
             const awg15Enabled = document.getElementById('proton_awg15').checked;
             const nojunkEnabled = document.getElementById('proton_nojunk').checked;
             const nolanEnabled = document.getElementById('proton_nolan').checked;

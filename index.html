@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ویرایشگر و مبدل کانفیگ</title>
+    <title> | Config Converterویرایشگر و مبدل کانفیگ</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <style>
@@ -769,23 +769,12 @@
 
                             <textarea id="confInput" class="win98-input" style="height: 150px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder"></textarea>
 
-                            <div class="action-btns" style="display:flex; gap:8px; margin-bottom:10px;">
+                            <div class="action-btns" style="display:flex; gap:8px;">
                                 <button onclick="convertWireguard()" class="win98-btn" style="flex:1; font-weight:bold;">
                                     <span data-i18n="convert">تبدیل کانفیگ</span>
                                 </button>
                                 <button type="button" id="clearWgBtn" onclick="handleClearWg()" class="win98-btn" style="width:80px;">
                                     <span data-i18n="clear">پاک کردن</span>
-                                </button>
-                            </div>
-
-                            <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
-                            
-                            <div class="button-container" style="display:flex; gap:8px;">
-                                <button class="win98-btn hidden" id="downloadBtn" style="flex:1;">
-                                    <span data-i18n="download">دانلود کانفیگ</span>
-                                </button>
-                                <button class="win98-btn hidden" id="copyBtn" style="flex:1;">
-                                    <span data-i18n="copy">کپی خروجی</span>
                                 </button>
                             </div>
                         </div>
@@ -904,6 +893,21 @@
                 <div class="group-box" style="margin-top:10px; padding: 10px; text-align:center;">
                     <div id="fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
                 </div>
+
+                <!-- بخش خروجی نتایج وایرگارد به انتهای این نما منتقل شد -->
+                <div class="group-box" style="margin-top:10px;">
+                    <span class="group-box-title" data-i18n="converted_placeholder">نتایج تبدیل</span>
+                    <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." readonly></textarea>
+                    
+                    <div class="button-container" style="display:flex; gap:8px;">
+                        <button class="win98-btn hidden" id="downloadBtn" style="flex:1;">
+                            <span data-i18n="download">دانلود کانفیگ</span>
+                        </button>
+                        <button class="win98-btn hidden" id="copyBtn" style="flex:1;">
+                            <span data-i18n="copy">کپی خروجی</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div id="protonView" class="hidden">
@@ -941,17 +945,6 @@
                                     <input type="checkbox" id="proton_nolan" onchange="convertProton()">
                                     <span data-i18n="proton_nolan">Исключить LAN (مسدودسازی شبکه‌ی محلی)</span>
                                 </label>
-                            </div>
-
-                            <textarea id="proton_yamlOutput" class="win98-input" style="height:120px; margin-bottom:10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." readonly></textarea>
-                            
-                            <div class="button-container" style="display:flex; gap:8px;">
-                                <button class="win98-btn hidden" id="proton_downloadBtn" style="flex:1;">
-                                    <span data-i18n="download">دانلود کانفیگ</span>
-                                </button>
-                                <button class="win98-btn hidden" id="proton_copyBtn" style="flex:1;">
-                                    <span data-i18n="copy">کپی خروجی</span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -1039,6 +1032,21 @@
 
                 <div class="group-box" style="margin-top:10px; padding: 10px; text-align:center;">
                     <div id="proton_fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
+                </div>
+
+                <!-- بخش خروجی نتایج بعد از تبدیل پروتون -->
+                <div class="group-box" style="margin-top:10px;">
+                    <span class="group-box-title" data-i18n="converted_placeholder">نتایج تبدیل</span>
+                    <textarea id="proton_yamlOutput" class="win98-input" style="height:140px; margin-bottom: 10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." readonly></textarea>
+                    
+                    <div class="button-container" style="display:flex; gap:8px;">
+                        <button class="win98-btn hidden" id="proton_downloadBtn" style="flex:1;">
+                            <span data-i18n="download">دانلود کانفیگ</span>
+                        </button>
+                        <button class="win98-btn hidden" id="proton_copyBtn" style="flex:1;">
+                            <span data-i18n="copy">کپی خروجی</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1258,7 +1266,7 @@
                 heavy_option: "سنگین (jc=5, jmin=10, jmax=40)",
                 custom_settings: "تنظیمات سفارشی",
                 generate_random: "تولید مقادیر تصادفی",
-                amnezia_params: "پارامترهای آمونیا ۱.۵",
+                amnezia_params: "پارامترهای آمنزیا ۱.۵",
                 wiresock_params: "پارامترهای Wiresock",
                 convert: "تبدیل کانفیگ",
                 clear: "پاک کردن",

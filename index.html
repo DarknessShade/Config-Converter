@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> | Config Converterویرایشگر و مبدل کانفیگ</title>
+    <title>ویرایشگر و مبدل کانفیگ</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <style>
@@ -697,7 +697,7 @@
 
         <div class="menu-bar">
             <div class="menu-item" onclick="toggleLanguage()">Language: <span id="langText">EN</span></div>
-            <div class="menu-item" onclick="toggleTheme()" id="btnThemeToggle">Theme Mode</div>
+            <div class="menu-item" onclick="toggleTheme()" id="btnThemeToggle" data-i18n="menuTheme">Theme Mode</div>
             <div class="menu-item" onclick="resetAllSystems()" data-i18n="menuReset">Reset All</div>
             <div class="menu-item" id="menuHelpLink" onclick="openV2rayHelp()" data-i18n="menuHelp">Help</div>
         </div>
@@ -717,7 +717,7 @@
                 </div>
 
                 <div class="group-box">
-                    <span class="group-box-title" data-i18n="mainLabel">اطلاعات ورودی (متن خام، کد یا Base64):</span>
+                    <span class="group-box-title" data-i18n="mainLabel">اطلاوات ورودی (متن خام، کد یا Base64):</span>
                     <textarea id="mainInput" data-i18n-placeholder="mainPlaceholder" placeholder="پشتیبانی از: vless:// , trojan:// , vmess:// , ss://&#10;یا کد JSON یا رشته Base64 سابسکریپشن"></textarea>
                     
                     <div class="editor-actions-row">
@@ -896,8 +896,8 @@
 
                 <!-- بخش خروجی نتایج وایرگارد به انتهای این نما منتقل شد -->
                 <div class="group-box" style="margin-top:10px;">
-                    <span class="group-box-title" data-i18n="converted_placeholder">نتایج تبدیل</span>
-                    <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." readonly></textarea>
+                    <span class="group-box-title" data-i18n="converted_results">نتایج تبدیل</span>
+                    <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
                     
                     <div class="button-container" style="display:flex; gap:8px;">
                         <button class="win98-btn hidden" id="downloadBtn" style="flex:1;">
@@ -1004,8 +1004,8 @@
                                 <div>I5: <textarea id="proton_i5" style="height:22px; font-size:10px;"></textarea></div>
                             </div>
                             <div style="display:flex; gap:4px;">
-                                <button class="win98-btn" style="flex:1;" onclick="protonRandomAWG15()">تصادفی</button>
-                                <button class="win98-btn" style="flex:1;" onclick="openDomainModal()">تولید کلید</button>
+                                <button class="win98-btn" style="flex:1;" onclick="protonRandomAWG15()" data-i18n="random">تصادفی</button>
+                                <button class="win98-btn" style="flex:1;" onclick="openDomainModal()" data-i18n="generate_key">تولید کلید</button>
                             </div>
                         </div>
 
@@ -1025,7 +1025,7 @@
                                     <option value="curl" selected>cURL</option>
                                 </select>
                             </div>
-                            <button class="win98-btn" style="width:100%;" onclick="protonRandomWiresock()">تصادفی</button>
+                            <button class="win98-btn" style="width:100%;" onclick="protonRandomWiresock()" data-i18n="random">تصادفی</button>
                         </div>
                     </div>
                 </div>
@@ -1034,10 +1034,10 @@
                     <div id="proton_fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
                 </div>
 
-                <!-- بخش خروجی نتایج بعد از تبدیل پروتون -->
+                <!-- output proton -->
                 <div class="group-box" style="margin-top:10px;">
-                    <span class="group-box-title" data-i18n="converted_placeholder">نتایج تبدیل</span>
-                    <textarea id="proton_yamlOutput" class="win98-input" style="height:140px; margin-bottom: 10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." readonly></textarea>
+                    <span class="group-box-title" data-i18n="converted_results">نتایج تبدیل</span>
+                    <textarea id="proton_yamlOutput" class="win98-input" style="height:140px; margin-bottom: 10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
                     
                     <div class="button-container" style="display:flex; gap:8px;">
                         <button class="win98-btn hidden" id="proton_downloadBtn" style="flex:1;">
@@ -1100,7 +1100,7 @@
                 <input type="text" id="proton_domain_input" placeholder="example.com" style="direction:ltr; margin-bottom:12px;">
                 <div style="display:flex; justify-content:center; gap:8px;">
                     <button class="win98-btn" style="min-width:70px;" onclick="confirmDomainModal()">OK</button>
-                    <button class="win98-btn" style="min-width:70px;" onclick="closeDomainModal()">Cancel</button>
+                    <button class="win98-btn" style="min-width:70px;" onclick="closeDomainModal()" data-i18n="cancel">Cancel</button>
                 </div>
             </div>
         </div>
@@ -1118,10 +1118,10 @@
                 <div class="group-box" style="margin-bottom: 12px; padding: 10px;">
                     <span class="group-box-title" data-i18n="helpLinksTitle">شبکه‌های ارتباطی</span>
                     <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
-                        <div>• تلگرام بهشت آزادی: <a href="https://t.me/Paradise_Of_Freedom" target="_blank" class="win98-link">Paradise_Of_Freedom</a></div>
-                        <div>• تلگرام وایرگارد کانفیگ: <a href="https://t.me/ConfigWireguard" target="_blank" class="win98-link">ConfigWireguard</a></div>
-                        <div>• توییتر (𝕏): <a href="https://x.com/mansor427" target="_blank" class="win98-link">ÐΛɌ₭ᑎΞ𐒡𐒡</a></div>
-                        <div>• گیت‌هاب: <a href="https://github.com/DarknessShade" target="_blank" class="win98-link">DarknessShade</a></div>
+                        <div>• <span data-i18n="tgParadise">تلگرام بهشت آزادی:</span> <a href="https://t.me/Paradise_Of_Freedom" target="_blank" class="win98-link">Paradise_Of_Freedom</a></div>
+                        <div>• <span data-i18n="tgWireguard">تلگرام وایرگارد کانفیگ:</span> <a href="https://t.me/ConfigWireguard" target="_blank" class="win98-link">ConfigWireguard</a></div>
+                        <div>• <span data-i18n="twitter">توییتر (𝕏):</span> <a href="https://x.com/mansor427" target="_blank" class="win98-link">ÐΛɌ₭ᑎΞ𐒡𐒡</a></div>
+                        <div>• <span data-i18n="github">گیت‌هاب:</span> <a href="https://github.com/DarknessShade" target="_blank" class="win98-link">DarknessShade</a></div>
                     </div>
                 </div>
 
@@ -1169,8 +1169,8 @@
           "SG": "🇸🇬 SG", "HK": "🇭🇰 HK", "IT": "🇮🇹 IT", "ES": "🇪🇸 ES",
           "BR": "🇧🇷 BR", "IN": "🇮🇳 IN", "MX": "🇲🇽 MX", "ZA": "🇿🇦 ZA",
           "RU": "🇷🇺 RU", "KR": "🇰🇷 KR", "NO": "🇳🇴 NO", "DK": "🇩🇰 DK",
-          "FI": "🇫🇮 FI", "NZ": "🇳🇿 NZ", "IE": "🇮🇪 IE", "AT": "🇦🇹 AT",
-          "BE": "🇧🇪 BE", "CZ": "🇨🇿 CZ", "PT": "🇵🇹 PT", "TR": "🇹راق TR",
+          "FI": "🇫 آی FI", "NZ": "🇳🇿 NZ", "IE": "🇮🇪 IE", "AT": "🇦🇹 AT",
+          "BE": "🇧🇪 BE", "CZ": "🇨🇿 CZ", "PT": "🇵🇹 PT", "TR": "🇹🇷 TR",
           "UA": "🇺🇦 UA", "AR": "🇦🇷 AR", "CL": "🇨🇱 CL", "CO": "🇨🇴 CO",
           "TH": "🇹🇭 TH", "MY": "🇲🇾 MY", "ID": "🇮🇩 ID", "AE": "🇦🇪 AE",
           "SA": "🇸🇦 SA", "IL": "🇮🇱 IL", "EG": "🇪🇬 EG"
@@ -1244,8 +1244,9 @@
                 successConvert: "تبدیل با موفقیت انجام شد.",
                 pasted: "با موفقیت جایگذاری شد.",
                 pasteErr: "دسترسی به کلیپ‌بورد ممکن نیست. لطفاً به صورت دستی جایگذاری کنید.",
-                menuHelp: "Help",
-                menuReset: "Reset All",
+                menuHelp: "راهنما",
+                menuReset: "ریست کلی",
+                menuTheme: "پوسته تاریک/روشن",
                 helpTitle: "ارتباط با ما",
                 v2rayHelpTitle: "راهنمای استفاده از مبدل V2Ray",
                 wgHelpTitle: "راهنمای مبدل WireGuard",
@@ -1258,6 +1259,7 @@
                 select_files: "انتخاب فایل‌های .conf",
                 input_placeholder: "یا محتوای فایل .conf خود را در اینجا جایگذاری کنید...",
                 converted_placeholder: "کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد...",
+                converted_results: "نتایج تبدیل",
                 output_format: "فرمت خروجی تبدیل",
                 advanced_settings: "تنظیمات پیشرفته مبدل",
                 junk_packet_settings: "تنظیمات پکت‌های هرز (Junk Packets)",
@@ -1277,7 +1279,14 @@
                 proton_awg15: "AWG 1.5 فعال",
                 proton_nojunk: "حذف پکت‌های هرز (No Junk)",
                 proton_nolan: "مسدودسازی رنج شبکه محلی (Exclude LAN)",
-                proton_domain_prompt: "لطفاً دامنه‌ای برای تولید کلید هگز I1 وارد کنید:"
+                proton_domain_prompt: "لطفاً دامنه‌ای برای تولید کلید هگز I1 وارد کنید:",
+                random: "تصادفی",
+                generate_key: "تولید کلید",
+                cancel: "لغو",
+                tgParadise: "تلگرام بهشت آزادی:",
+                tgWireguard: "تلگرام وایرگارد کانفیگ:",
+                twitter: "توییتر (𝕏):",
+                github: "گیت‌هاب:"
             },
             en: {
                 title: "✨ Advanced V2Ray Protocol Converter",
@@ -1312,6 +1321,7 @@
                 pasteErr: "Unable to read from clipboard. Please paste manually.",
                 menuHelp: "Help",
                 menuReset: "Reset All",
+                menuTheme: "Theme Mode",
                 helpTitle: "About Us",
                 v2rayHelpTitle: "V2Ray Converter Help Guide",
                 wgHelpTitle: "WireGuard Converter Help Guide",
@@ -1324,6 +1334,7 @@
                 select_files: "Select .conf files",
                 input_placeholder: "Or paste your .conf file content here...",
                 converted_placeholder: "The converted configuration will appear here...",
+                converted_results: "Conversion Results",
                 output_format: "Output Format",
                 advanced_settings: "Advanced Settings",
                 junk_packet_settings: "Junk Packet Settings",
@@ -1343,11 +1354,20 @@
                 proton_awg15: "Enable AWG 1.5",
                 proton_nojunk: "Strip Junk Packets",
                 proton_nolan: "Exclude LAN Traffic",
-                proton_domain_prompt: "Enter Domain to generate hex key for I1:"
+                proton_domain_prompt: "Enter Domain to generate hex key for I1:",
+                random: "Random",
+                generate_key: "Generate Key",
+                cancel: "Cancel",
+                tgParadise: "Telegram Paradise of Freedom:",
+                tgWireguard: "Telegram Wireguard Config:",
+                twitter: "Twitter (𝕏):",
+                github: "GitHub:"
             }
         };
 
         function updateLanguage() {
+            document.title = currentLang === 'fa' ? 'ویرایشگر و مبدل کانفیگ' : 'Config Editor & Converter';
+
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (i18n[currentLang][key]) {
@@ -1558,6 +1578,7 @@
             setupHelpTextByApp();
         }
 
+        // --- Shared Toast Handler ---
         function showToast(message) {
             const overlay = document.getElementById('msgBoxOverlay');
             const messageText = document.getElementById('toastMessage');
@@ -1854,8 +1875,9 @@
 
         function generateStatsUI(stats) {
             const container = document.getElementById('statsContainer');
+            const totalLabel = currentLang === 'fa' ? 'کل' : 'Total';
             container.innerHTML = `
-                <div class="stat-field">کل: ${stats.all}</div>
+                <div class="stat-field">${totalLabel}: ${stats.all}</div>
                 ${stats.vless > 0 ? `<div class="stat-field">VLESS: ${stats.vless}</div>` : ''}
                 ${stats.vmess > 0 ? `<div class="stat-field">VMess: ${stats.vmess}</div>` : ''}
                 ${stats.trojan > 0 ? `<div class="stat-field">Trojan: ${stats.trojan}</div>` : ''}
@@ -1865,8 +1887,9 @@
 
         function generateFilterButtons(stats) {
             const container = document.getElementById('filterButtonsContainer');
+            const allLabel = currentLang === 'fa' ? 'همه' : 'All';
             container.innerHTML = `
-                <button class="win98-tab active" onclick="filterResults('all', this)">همه (${stats.all})</button>
+                <button class="win98-tab active" onclick="filterResults('all', this)">${allLabel} (${stats.all})</button>
                 ${stats.vless > 0 ? `<button class="win98-tab" onclick="filterResults('vless', this)">VLESS (${stats.vless})</button>` : ''}
                 ${stats.vmess > 0 ? `<button class="win98-tab" onclick="filterResults('vmess', this)">VMess (${stats.vmess})</button>` : ''}
                 ${stats.trojan > 0 ? `<button class="win98-tab" onclick="filterResults('trojan', this)">Trojan (${stats.trojan})</button>` : ''}
@@ -2179,7 +2202,7 @@
 
         function generateClashYaml() {
             if (proxyList.length === 0) {
-                showToast('هیچ فایلی برای تبدیل پردازش نشده است.');
+                showToast(currentLang === 'fa' ? 'هیچ فایلی برای تبدیل پردازش نشده است.' : 'No processed files found for conversion.');
                 return;
             }
             const yamlProxies = proxyList.map(proxy => {
@@ -2252,7 +2275,7 @@
 
         function generateAWGYaml() {
             if (proxyList.length === 0) {
-                showToast('هیچ اطلاعاتی برای پردازش موجود نیست.');
+                showToast(currentLang === 'fa' ? 'هیچ اطلاعاتی برای پردازش موجود نیست.' : 'No data available to process.');
                 return;
             }
             const awgConfigs = proxyList.map(generateSingleAWGConfig);
@@ -2300,7 +2323,7 @@
 
         function generateWiresocketConfigs() {
             if (proxyList.length === 0) {
-                showToast('هیچ فایلی لود نشده است.');
+                showToast(currentLang === 'fa' ? 'هیچ فایلی لود نشده است.' : 'No files have been loaded.');
                 return;
             }
             const configs = proxyList.map(generateSingleWiresocketConfig);
@@ -2685,6 +2708,7 @@
             }
         }
 
+        // --- Proton Clash Configuration Exporter ---
         function generateProtonClashYaml() {
             if (protonProxyList.length === 0) return;
             const yamlProxies = protonProxyList.map(proxy => {

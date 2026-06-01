@@ -105,9 +105,7 @@ python -m http.server 8000
 **توجه:** استفاده از این ابزار ممکن است در برخی مناطق دارای محدودیت‌های قانونی باشد. مسئولیت نحوه استفاده از آن بر عهده کاربر نهایی است.
 
 ---
-## 🙏 قدردانی از پروژه‌های منبع باز استفاده شده در این ابزار
-
-این پروژه بدون کدهای ارزشمند پروژه‌های زیر امکان‌پذیر نبود. از مشارکت‌کنندگان این مخازن صمیمانه تشکر می‌شود:
+#### 🙏 منابع استفاده شده
 
 - **[Proton-Converter](https://github.com/proton-converter)**
 - **[Wireguard DPI Circumvention Converter](https://github.com/fevid/wireguard-dpi-circumvention-converter)**

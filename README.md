@@ -71,9 +71,7 @@ Config Converter یک ابزار قدرتمند و کاملاً سمت کارب�
 
 ## ⚙️ فناوری استفاده شده و وابستگی‌ها
 
-این پروژه با استفاده از زبان‌های استاندارد وب (`HTML`، `CSS`، `JavaScript`) ساخته شده و **هیچ وابستگی خارجی یا کتابخانه جانبی** به جز کدهای پروژه‌های زیر ندارد:
-- **[Proton-Converter](https://github.com/proton-converter):** پایه و اساس اولیه برای قابلیت‌های تبدیل پروتون به فرمت‌های دیگر.
-- **[wireguard-dpi-circumvention-converter](https://github.com/fevid/wireguard-dpi-circumvention-converter):** الهام‌بخش و تأمین‌کننده کدهای مربوط به افزودن پکت‌های هرز به کانفیگ‌های Wireguard جهت دور زدن DPI.
+این پروژه با استفاده از زبان‌های استاندارد وب (`HTML`، `CSS`، `JavaScript`) ساخته شده است
 
 ## 🧪 نحوه اجرای محلی (Local Development)
 
@@ -97,9 +95,9 @@ python -m http.server 8000
 
 ## 🌐 ارتباط با ما
 
-- **تلگرام بهشت آزادی:** Paradise_Of_Freedom
-- **تلگرام وایرگارد کانفیگ:** ConfigWireguard
-- **توییتر (𝕏):** ÐΛɌ₭ᑎΞ𐒡𐒡
+- **تلگرام بهشت آزادی:** [Paradise_Of_Freedom](https://t.me/Paradise_Of_Freedom)
+- **تلگرام وایرگارد کانفیگ:** [ConfigWireguard](https://t.me/ConfigWireguard)
+- **توییتر (𝕏):** [ÐΛɌ₭ᑎΞ𐒡𐒡](https://x.com/mansor427)
 - **گیتهاب:** [DarknessShade](https://github.com/DarknessShade)
 
 ---

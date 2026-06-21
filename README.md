@@ -107,5 +107,4 @@ python -m http.server 8000
 ---
 #### 🙏 منابع استفاده شده
 
-- **[Proton-Converter](https://github.com/proton-converter)**
 - **[Wireguard DPI Circumvention Converter](https://github.com/fevid/wireguard-dpi-circumvention-converter)**

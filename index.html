@@ -6,6 +6,8 @@
     <title>ویرایشگر و مبدل کانفیگ</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <style>
         /* --- Desktop Color Palette & OS Variables --- */
         :root {
@@ -269,7 +271,7 @@
             direction: ltr;
         }
 
-        #mainInput, #confInput, #yamlOutput, #proton_confInput, #proton_yamlOutput {
+        #mainInput, #confInput, #yamlOutput, #csInputArea, #csOutputArea {
             height: 120px;
         }
 
@@ -278,7 +280,7 @@
             resize: none;
         }
 
-        input[type="text"] {
+        input[type="text"], select {
             height: 24px;
         }
 
@@ -644,7 +646,7 @@
             display: none !important;
         }
 
-        #domainModal {
+        #wgQrModal {
             display: none;
             position: fixed;
             top: 0;
@@ -656,6 +658,39 @@
             align-items: center;
             justify-content: center;
         }
+
+        #wgQrCanvasContainer {
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            background: #ffffff;
+            border: 1px inset #fff;
+        }
+
+        .wg-drop-zone.drag-over {
+            outline: 2px dashed var(--win-blue-end);
+            outline-offset: -2px;
+            background-color: rgba(16, 132, 208, 0.12);
+        }
+        
+        .cs-status-strip {
+            margin-top: 10px;
+            padding: 6px;
+            background: var(--win-window-bg);
+            border: 1px inset #fff;
+            font-family: monospace;
+            min-height: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            direction: rtl;
+        }
+        .status-ok { color: green; font-weight: bold; }
+        .status-warn { color: #d07000; font-weight: bold; }
+        .status-err { color: red; font-weight: bold; }
+        body.light-theme .status-ok { color: #00ff00; }
+        body.light-theme .status-warn { color: #ffff00; }
+        body.light-theme .status-err { color: #ff0000; }
 
         @media (max-width: 768px) {
             .results-header { flex-direction: column; gap: 8px; }
@@ -675,9 +710,9 @@
             <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/wirgurad%20win98.png" alt="wireguard">
             <span>wirgurad converter</span>
         </div>
-        <div class="shortcut" id="protonShortcut" onclick="selectShortcut('proton', this)">
-            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/proton%20win98.png" alt="proton">
-            <span>proton converter</span>
+        <div class="shortcut" id="clashSingboxShortcut" onclick="selectShortcut('clashSingbox', this)">
+            <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/singclashv2.png" alt="clashSingbox">
+            <span>Clash / Sing-box</span>
         </div>
         <div class="shortcut" id="helpShortcut" onclick="openHelp()">
             <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Win98/pas%20win98.png" alt="help">
@@ -762,12 +797,12 @@
                         <div class="group-box" style="height: calc(100% - 10px);">
                             <span class="group-box-title" data-i18n="section_configuration">پیکربندی فایل ورودی</span>
                             
-                            <label for="wgFiles" class="win98-btn custom-file-upload">
+                            <label for="wgFiles" class="win98-btn custom-file-upload wg-drop-zone" id="wgUploadLabel">
                                 <span data-i18n="select_files">انتخاب فایل‌های .conf</span>
                             </label>
                             <input type="file" id="wgFiles" accept=".conf" multiple style="display:none;">
 
-                            <textarea id="confInput" class="win98-input" style="height: 150px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder"></textarea>
+                            <textarea id="confInput" class="win98-input wg-drop-zone" style="height: 150px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder"></textarea>
 
                             <div class="action-btns" style="display:flex; gap:8px;">
                                 <button onclick="convertWireguard()" class="win98-btn" style="flex:1; font-weight:bold;">
@@ -894,7 +929,6 @@
                     <div id="fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
                 </div>
 
-                <!-- بخش خروجی نتایج وایرگارد به انتهای این نما منتقل شد -->
                 <div class="group-box" style="margin-top:10px;">
                     <span class="group-box-title" data-i18n="converted_results">نتایج تبدیل</span>
                     <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
@@ -906,148 +940,125 @@
                         <button class="win98-btn hidden" id="copyBtn" style="flex:1;">
                             <span data-i18n="copy">کپی خروجی</span>
                         </button>
+                        <button class="win98-btn hidden" id="wgQrBtn" style="flex:1;" onclick="openWgQrModal()">
+                            <span data-i18n="show_qr">نمایش QR</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div id="protonView" class="hidden">
+            <!-- Clash / Sing-box View -->
+            <div id="clashSingboxView" class="hidden">
                 <div class="wg-columns">
+                    <!-- Input Section -->
                     <div>
-                        <div class="group-box" style="height: calc(100% - 10px);">
-                            <span class="group-box-title" data-i18n="section_configuration">پیکربندی فایل ورودی</span>
-                            
-                            <label for="proton_wgFiles" class="win98-btn custom-file-upload">
-                                <span data-i18n="select_files">انتخاب فایل‌های .conf</span>
-                            </label>
-                            <input type="file" id="proton_wgFiles" accept=".conf" multiple style="display:none;">
-
-                            <textarea id="proton_confInput" class="win98-input" style="height: 120px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder" readonly></textarea>
-
-                            <div class="action-btns" style="display:flex; gap:8px; margin-bottom:10px;">
-                                <button onclick="convertProton()" class="win98-btn" style="flex:1; font-weight:bold;">
-                                    <span data-i18n="convert">تبدیل کانفیگ</span>
+                        <div class="group-box" style="margin-bottom: 8px;">
+                            <span class="group-box-title" data-i18n="subLabel">دریافت مستقیم از لینک سابسکریپشن:</span>
+                            <div class="sub-fetcher">
+                                <input type="text" id="csSubUrlInput" placeholder="https://example.com/sub/link" style="direction: ltr;">
+                                <button class="win98-btn btn-fetch" onclick="fetchCSSubscription()">
+                                    <div class="spinner" id="csFetchSpinner"></div>
+                                    <span id="csFetchBtnText" data-i18n="fetchBtn">دریافت آنلاین</span>
                                 </button>
-                                <button type="button" onclick="handleClearProton()" class="win98-btn" style="width:80px;">
+                            </div>
+                        </div>
+
+                        <div class="group-box" style="height: calc(100% - 65px);">
+                            <span class="group-box-title" data-i18n="cs_input">ورودی فرمت‌ها</span>
+                            
+                            <select id="csInputFormat" style="margin-bottom: 8px;">
+                                <option value="auto" data-i18n="cs_auto">تشخیص خودکار</option>
+                                <option value="links" data-i18n="cs_links">لینک‌های پروکسی (هر خط یک لینک)</option>
+                                <option value="clash" data-i18n="cs_clash">Clash YAML</option>
+                                <option value="singbox" data-i18n="cs_singbox">Sing-box JSON</option>
+                            </select>
+
+                            <label for="csFiles" class="win98-btn custom-file-upload wg-drop-zone" id="csUploadLabel">
+                                <span data-i18n="cs_select_file">انتخاب فایل (.txt, .yaml, .json)</span>
+                            </label>
+                            <input type="file" id="csFiles" accept=".txt,.yaml,.yml,.json" multiple style="display:none;">
+
+                            <textarea id="csInputArea" class="wg-drop-zone" style="height: 150px; margin-bottom: 10px;" placeholder="لینک‌ها یا کانفیگ خود را اینجا پیست کنید..." data-i18n-placeholder="cs_input_placeholder"></textarea>
+
+                            <div class="action-btns" style="display:flex; gap:8px; align-items: center;">
+                                <button type="button" id="csPasteBtn" class="win98-btn" style="flex:1;">
+                                    <span data-i18n="pasteTooltip">جایگذاری</span>
+                                </button>
+                                <button type="button" id="csClearBtn" class="win98-btn" style="flex:1;">
                                     <span data-i18n="clear">پاک کردن</span>
                                 </button>
                             </div>
-
-                            <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; padding:8px; border:1px inset #fff;">
-                                <label class="win98-checkbox" style="margin-top:0;">
-                                    <input type="checkbox" id="proton_awg15" checked onchange="toggleProtonAWG15Containers()">
-                                    <span data-i18n="proton_awg15">AWG 1.5</span>
-                                </label>
-                                <label class="win98-checkbox" style="margin-top:0;">
-                                    <input type="checkbox" id="proton_nojunk" onchange="toggleProtonJunkContainer()">
-                                    <span data-i18n="proton_nojunk">Без мусора (بدون پکت هرز)</span>
-                                </label>
-                                <label class="win98-checkbox" style="margin-top:0;">
-                                    <input type="checkbox" id="proton_nolan" onchange="convertProton()">
-                                    <span data-i18n="proton_nolan">Исключить LAN (مسدودسازی شبکه‌ی محلی)</span>
-                                </label>
+                            <div style="margin-top: 8px; font-weight: bold; text-align: center;">
+                                <span data-i18n="cs_nodes_found">نود شناسایی شد:</span> <span id="csInputCount" style="color:var(--win-blue-start)">0</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Output & Options Section -->
                     <div>
                         <div class="group-box">
-                            <span class="group-box-title" data-i18n="output_format">فرمت خروجی تبدیل</span>
-                            <div style="display:flex; flex-direction:column;">
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_awg_radio" name="proton_option" checked onchange="toggleProtonAWG15Containers()">
-                                    <span>AmneziaWG</span>
-                                </label>
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_karing_radio" name="proton_option" onchange="toggleProtonAWG15Containers()">
-                                    <span>WireSock</span>
-                                </label>
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_clash_radio" name="proton_option" onchange="toggleProtonAWG15Containers()">
-                                    <span>Clash / Meta</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="group-box" id="proton_junk_container">
-                            <span class="group-box-title" data-i18n="junk_packet_settings">پکت‌های هرز</span>
-                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_junk1" name="proton_junk" checked onchange="convertProton()">
-                                    <span>jc = 3, jmin = 1, jmax = 3</span>
-                                </label>
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_junk2" name="proton_junk" onchange="convertProton()">
-                                    <span>jc = 30, jmin = 10, jmax = 30</span>
-                                </label>
-                                <label class="win98-radio">
-                                    <input type="radio" id="proton_junk3" name="proton_junk" onchange="convertProton()">
-                                    <span data-i18n="custom_settings">تنظیمات سفارشی</span>
-                                </label>
-                            </div>
-                            <div style="padding: 6px; border: 1px inset #fff; margin-bottom: 6px;">
-                                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:6px;">
-                                    <div>jc: <input type="text" id="proton_jc1" placeholder="128" style="width:36px;"></div>
-                                    <div>jmin: <input type="text" id="proton_jmin1" placeholder="1279" style="width:36px;"></div>
-                                    <div>jmax: <input type="text" id="proton_jmax1" placeholder="1280" style="width:36px;"></div>
+                            <span class="group-box-title" data-i18n="advanced_settings">تنظیمات پیشرفته</span>
+                            <div style="margin-bottom: 8px;">
+                                <span class="label-with-icon" data-i18n="cs_routing">قوانین روتینگ (Clash):</span>
+                                <div style="display:flex; gap: 10px;">
+                                    <label class="win98-radio">
+                                        <input type="radio" name="cs_rule_mode" value="ir" checked>
+                                        <span data-i18n="cs_ir">ست ایران (پیشنهادی)</span>
+                                    </label>
+                                    <label class="win98-radio">
+                                        <input type="radio" name="cs_rule_mode" value="minimal">
+                                        <span data-i18n="cs_minimal">حداقلی (فقط پروکسی)</span>
+                                    </label>
                                 </div>
-                                <button class="win98-btn" style="width:100%;" onclick="protonRandomJunk()" data-i18n="generate_random">تصادفی</button>
+                            </div>
+                            <div>
+                                <span class="label-with-icon" data-i18n="cs_sb_mode">حالت تست‌خودکار (Sing-box):</span>
+                                <div style="display:flex; gap: 10px;">
+                                    <label class="win98-radio">
+                                        <input type="radio" name="cs_sb_mode" value="tun" checked>
+                                        <span data-i18n="cs_tun">TUN + Mixed</span>
+                                    </label>
+                                    <label class="win98-radio">
+                                        <input type="radio" name="cs_sb_mode" value="mixed">
+                                        <span data-i18n="cs_mixed">فقط Mixed/Socks</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="group-box hidden" id="proton_awg15_container">
-                            <span class="group-box-title" data-i18n="amnezia_params">پارامترهای AWG 1.5</span>
-                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
-                                <div>I1: <textarea id="proton_i1" style="height:22px; font-size:10px;"></textarea></div>
-                                <div>I2: <textarea id="proton_i2" style="height:22px; font-size:10px;"></textarea></div>
-                                <div>I3: <textarea id="proton_i3" style="height:22px; font-size:10px;"></textarea></div>
-                                <div>I4: <textarea id="proton_i4" style="height:22px; font-size:10px;"></textarea></div>
-                                <div>I5: <textarea id="proton_i5" style="height:22px; font-size:10px;"></textarea></div>
-                            </div>
-                            <div style="display:flex; gap:4px;">
-                                <button class="win98-btn" style="flex:1;" onclick="protonRandomAWG15()" data-i18n="random">تصادفی</button>
-                                <button class="win98-btn" style="flex:1;" onclick="openDomainModal()" data-i18n="generate_key">تولید کلید</button>
-                            </div>
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <button class="win98-btn" id="csSwapBtn" style="font-weight: bold; width: 100%;">
+                                ⇅ <span data-i18n="cs_swap">جابه‌جایی ورودی / خروجی</span> ⇅
+                            </button>
                         </div>
 
-                        <div class="group-box hidden" id="proton_wiresock_container">
-                            <span class="group-box-title" data-i18n="wiresock_params">پارامترهای Wiresock</span>
-                            <div style="margin-bottom:6px;">Id: <input type="text" id="proton_id" placeholder="ozon.ru"></div>
-                            <div style="margin-bottom:6px;">Ip: 
-                                <select id="proton_ip">
-                                    <option value="quic" selected>QUIC</option>
-                                    <option value="dns">DNS</option>
-                                </select>
+                        <div class="group-box" style="margin-bottom: 0;">
+                            <span class="group-box-title" data-i18n="cs_output">خروجی تبدیل‌شده</span>
+                            
+                            <select id="csOutputFormat" style="margin-bottom: 8px;">
+                                <option value="clash" data-i18n="cs_clash">Clash YAML</option>
+                                <option value="singbox" data-i18n="cs_singbox">Sing-box JSON</option>
+                                <option value="links" data-i18n="cs_links">لینک‌های پروکسی</option>
+                            </select>
+
+                            <textarea id="csOutputArea" style="height:120px; margin-bottom: 10px;" readonly data-i18n-placeholder="cs_output_placeholder"></textarea>
+                            
+                            <div class="button-container" style="display:flex; gap:8px;">
+                                <button class="win98-btn" id="csCopyBtn" style="flex:1;">
+                                    <span data-i18n="copy">کپی خروجی</span>
+                                </button>
+                                <button class="win98-btn" id="csDownloadBtn" style="flex:1;">
+                                    <span data-i18n="download">دانلود فایل</span>
+                                </button>
                             </div>
-                            <div style="margin-bottom:6px;">Ib: 
-                                <select id="proton_ib">
-                                    <option value="chrome">Chrome</option>
-                                    <option value="firefox">Firefox</option>
-                                    <option value="curl" selected>cURL</option>
-                                </select>
+                            <div style="margin-top: 8px; font-weight: bold; text-align: center;">
+                                <span data-i18n="cs_nodes_out">نود در خروجی:</span> <span id="csOutputCount" style="color:var(--win-blue-start)">0</span>
                             </div>
-                            <button class="win98-btn" style="width:100%;" onclick="protonRandomWiresock()" data-i18n="random">تصادفی</button>
                         </div>
                     </div>
                 </div>
-
-                <div class="group-box" style="margin-top:10px; padding: 10px; text-align:center;">
-                    <div id="proton_fileList" data-i18n="no_files" style="font-weight:bold; color:var(--win-text);">هیچ فایلی انتخاب نشده است</div>
-                </div>
-
-                <!-- output proton -->
-                <div class="group-box" style="margin-top:10px;">
-                    <span class="group-box-title" data-i18n="converted_results">نتایج تبدیل</span>
-                    <textarea id="proton_yamlOutput" class="win98-input" style="height:140px; margin-bottom: 10px;" placeholder="نتایج تبدیل در اینجا ظاهر خواهند شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
-                    
-                    <div class="button-container" style="display:flex; gap:8px;">
-                        <button class="win98-btn hidden" id="proton_downloadBtn" style="flex:1;">
-                            <span data-i18n="download">دانلود کانفیگ</span>
-                        </button>
-                        <button class="win98-btn hidden" id="proton_copyBtn" style="flex:1;">
-                            <span data-i18n="copy">کپی خروجی</span>
-                        </button>
-                    </div>
-                </div>
+                
+                <div class="cs-status-strip" id="csStatusStrip"></div>
             </div>
 
             <div class="results-section" id="resultsSection">
@@ -1087,25 +1098,6 @@
         </div>
     </div>
 
-    <div id="domainModal">
-        <div class="container message-box" style="width:340px;">
-            <div class="title-bar">
-                <div class="title-bar-text">Domain Input</div>
-                <div class="title-bar-controls">
-                    <button onclick="closeDomainModal()">✕</button>
-                </div>
-            </div>
-            <div class="window-body">
-                <p style="font-weight:bold; margin-bottom:8px;" data-i18n="proton_domain_prompt">لطفاً دامنه‌ای برای تولید I1 وارد کنید:</p>
-                <input type="text" id="proton_domain_input" placeholder="example.com" style="direction:ltr; margin-bottom:12px;">
-                <div style="display:flex; justify-content:center; gap:8px;">
-                    <button class="win98-btn" style="min-width:70px;" onclick="confirmDomainModal()">OK</button>
-                    <button class="win98-btn" style="min-width:70px;" onclick="closeDomainModal()" data-i18n="cancel">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="helpBoxOverlay">
         <div class="container" style="max-width: 440px; background: var(--win-face);">
             <div class="title-bar">
@@ -1123,6 +1115,11 @@
                         <div>• <span data-i18n="twitter">توییتر (𝕏):</span> <a href="https://x.com/mansor427" target="_blank" class="win98-link">ÐΛɌ₭ᑎΞ𐒡𐒡</a></div>
                         <div>• <span data-i18n="github">گیت‌هاب:</span> <a href="https://github.com/DarknessShade" target="_blank" class="win98-link">DarknessShade</a></div>
                     </div>
+                </div>
+
+                <div class="group-box" style="margin-bottom: 12px; padding: 10px;">
+                    <span class="group-box-title" data-i18n="helpSiteFeaturesTitle">ویژگی‌های این وب</span>
+                    <p id="helpSiteFeaturesText" style="white-space: pre-line; font-size: 11px;"></p>
                 </div>
 
                 <img src="https://raw.githubusercontent.com/DarknessShade/DarknessShade/main/Image/Darkness.png" alt="Darkness" class="profile-img">
@@ -1183,9 +1180,8 @@
         let currentLang = 'fa';
         let currentActiveApp = 'v2ray'; 
         let proxyList = []; 
-        let protonProxyList = []; 
 
-        // --- Base64 Safe Decoding/Encoding Helpers (integrated from jstovless.html) ---
+        // --- Base64 Safe Decoding/Encoding Helpers ---
         function safeAtob(str) {
             try {
                 let cleaned = str.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
@@ -1216,7 +1212,7 @@
             fa: {
                 title: "✨ مبدل پیشرفته پروتکل‌های V2Ray",
                 wgTitle: "🛡️ مبدل پروتکل WireGuard",
-                protonTitle: "🛡️ مبدل تخصصی پروتکل Proton VPN",
+                csTitle: "⚡ مبدل حرفه‌ای Clash ⇄ Sing-box",
                 subLabel: "دریافت مستقیم از لینک سابسکریپشن:",
                 fetchBtn: "دریافت آنلاین",
                 mainLabel: "اطلاعات ورودی (متن خام، کد یا Base64):",
@@ -1250,9 +1246,11 @@
                 helpTitle: "ارتباط با ما",
                 v2rayHelpTitle: "راهنمای استفاده از مبدل V2Ray",
                 wgHelpTitle: "راهنمای مبدل WireGuard",
-                protonHelpTitle: "راهنمای مبدل Proton WG",
+                csHelpTitle: "راهنمای مبدل Clash / Sing-box",
                 helpFeaturesTitle: "راهنمای کاربردی",
                 helpLinksTitle: "آدرس شبکه‌های اجتماعی",
+                helpSiteFeaturesTitle: "ویژگی‌های این وب",
+                helpSiteFeaturesText: "✨ مبدل پیشرفته V2Ray:\n• دریافت، ویرایش، تغییر دسته‌جمعی IP و پورت، و ادغام کانفیگ‌های VLESS، VMess، Trojan و SS.\n\n🛡️ مبدل WireGuard:\n• پشتیبانی از کانفیگ‌های اختصاصی Proton VPN.\n• تبدیل فایل‌های وایرگارد به فرمت‌های Clash، AmneziaWG و Wiresock به همراه تولید پکت‌های هرز.\n\n⚡ مبدل Clash / Sing-box:\n• تبدیل دوطرفه فایل‌ها و لینک‌های سابسکریپشن (JSON، YAML، TXT) به کلش و سینگ‌باکس با امکان روتینگ پیشرفته.",
                 helpIntro: "این ابزار به شما امکان می‌دهد پروتکل‌های ارتباطی مختلف نظیر VLESS ،VMess ،Trojan و Shadowsocks را به صورت همزمان فیلتر، ادغام و بازنویسی کنید.",
                 helpFeatures: "• دریافت مستقیم اطلاعات سابسکریپشن\n• تغییر و جایگزینی دسته‌جمعی IPها و پورت‌های سرورها\n• شخصی‌سازی و اصلاح یکپارچه اسامی کانفیگ‌ها\n• امکان دریافت خروجی نهایی به صورت متن ساده یا فایل فشرده با فرمت Base64\n• سیستم فیلترینگ هوشمند و نمایش QR کد بومی",
                 section_configuration: "پیکربندی فایل ورودی",
@@ -1261,7 +1259,7 @@
                 converted_placeholder: "کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد...",
                 converted_results: "نتایج تبدیل",
                 output_format: "فرمت خروجی تبدیل",
-                advanced_settings: "تنظیمات پیشرفته مبدل",
+                advanced_settings: "تنظیمات پیشرفته",
                 junk_packet_settings: "تنظیمات پکت‌های هرز (Junk Packets)",
                 enable_15: "فعال‌سازی نسخه آمونیا ۱.۵ (Amnezia 1.5)",
                 light_option: "سبک (jc=3, jmin=1, jmax=3)",
@@ -1272,26 +1270,44 @@
                 wiresock_params: "پارامترهای Wiresock",
                 convert: "تبدیل کانفیگ",
                 clear: "پاک کردن",
-                download: "دانلود کانفیگ",
+                download: "دانلود فایل",
                 copy: "کپی خروجی",
                 no_files: "هیچ فایلی انتخاب نشده است",
                 files_selected: "{count} فایل انتخاب شده است",
-                proton_awg15: "AWG 1.5 فعال",
-                proton_nojunk: "حذف پکت‌های هرز (No Junk)",
-                proton_nolan: "مسدودسازی رنج شبکه محلی (Exclude LAN)",
-                proton_domain_prompt: "لطفاً دامنه‌ای برای تولید کلید هگز I1 وارد کنید:",
-                random: "تصادفی",
-                generate_key: "تولید کلید",
                 cancel: "لغو",
+                show_qr: "نمایش QR",
+                qr_modal_title: "QR کانفیگ",
+                qr_overflow_err: "این کانفیگ برای تبدیل به QR بسیار طولانی است. لطفاً از گزینه دانلود استفاده کنید.",
+                downloaded_zip: "فایل ZIP شامل {count} کانفیگ دانلود شد.",
+                drop_hint: "می‌توانید فایل‌های .conf را بکشید و اینجا رها کنید",
                 tgParadise: "تلگرام بهشت آزادی:",
                 tgWireguard: "تلگرام وایرگارد کانفیگ:",
                 twitter: "توییتر (𝕏):",
-                github: "گیت‌هاب:"
+                github: "گیت‌هاب:",
+                // Clash Singbox strings
+                cs_input: "ورودی فرمت‌ها",
+                cs_auto: "تشخیص خودکار",
+                cs_links: "لینک‌های پروکسی (هر خط یک لینک)",
+                cs_clash: "Clash YAML",
+                cs_singbox: "Sing-box JSON",
+                cs_select_file: "انتخاب فایل (.txt, .yaml, .json)",
+                cs_input_placeholder: "لینک‌های ss/vmess/vless/trojan یا کانفیگ کلش/سینگ‌باکس خود را اینجا پیست کنید...",
+                cs_output_placeholder: "خروجی تبدیل‌شده در اینجا نمایش داده خواهد شد...",
+                cs_routing: "قوانین روتینگ (Clash):",
+                cs_ir: "ست ایران (پیشنهادی)",
+                cs_minimal: "حداقلی (فقط پروکسی)",
+                cs_sb_mode: "حالت تست‌خودکار (Sing-box):",
+                cs_tun: "TUN + Mixed",
+                cs_mixed: "فقط Mixed/Socks",
+                cs_swap: "جابه‌جایی ورودی / خروجی",
+                cs_output: "خروجی تبدیل‌شده",
+                cs_nodes_found: "نود شناسایی شد:",
+                cs_nodes_out: "نود در خروجی:"
             },
             en: {
                 title: "✨ Advanced V2Ray Protocol Converter",
                 wgTitle: "🛡️ WireGuard Protocol Converter",
-                protonTitle: "🛡️ Proton VPN Protocol Converter",
+                csTitle: "⚡ Advanced Clash ⇄ Sing-box Converter",
                 subLabel: "Fetch directly from Subscription Link:",
                 fetchBtn: "Fetch Online",
                 mainLabel: "Input Data (Raw text, configs, or Base64):",
@@ -1325,9 +1341,11 @@
                 helpTitle: "About Us",
                 v2rayHelpTitle: "V2Ray Converter Help Guide",
                 wgHelpTitle: "WireGuard Converter Help Guide",
-                protonHelpTitle: "Proton WG Converter Help Guide",
+                csHelpTitle: "Clash / Sing-box Converter Guide",
                 helpFeaturesTitle: "Operations Guide",
                 helpLinksTitle: "Social Network Addresses",
+                helpSiteFeaturesTitle: "Features of this website",
+                helpSiteFeaturesText: "✨ V2Ray Converter:\n• Fetch, edit, mass replace IP/ports, and merge VLESS, VMess, Trojan, and SS configs.\n\n🛡️ WireGuard Converter:\n• Support for Proton VPN WireGuard configs.\n• Convert .conf to Clash, AmneziaWG, and Wiresock with Junk packet generator.\n\n⚡ Clash / Sing-box Converter:\n• Bi-directional conversion of sub links (JSON/YAML/TXT) into Clash and Sing-box with advanced routing.",
                 helpIntro: "This utility allows you to manage, edit, and merge various communication protocols including VLESS, VMess, Trojan, and Shadowsocks.",
                 helpFeatures: "• Direct online subscription fetching and processing\n• Mass replace and override IP addresses and port configurations\n• Uniform naming customization for all profile outputs\n• Generate standard link lists or compressed Base64 formatted subscription files\n• Built-in protocol filtering and offline QR code generator",
                 section_configuration: "Input Configuration",
@@ -1347,21 +1365,39 @@
                 wiresock_params: "Wiresock Parameters",
                 convert: "Convert",
                 clear: "Clear",
-                download: "Download",
-                copy: "Copy",
+                download: "Download File",
+                copy: "Copy Output",
                 no_files: "No files selected",
                 files_selected: "{count} files selected",
-                proton_awg15: "Enable AWG 1.5",
-                proton_nojunk: "Strip Junk Packets",
-                proton_nolan: "Exclude LAN Traffic",
-                proton_domain_prompt: "Enter Domain to generate hex key for I1:",
-                random: "Random",
-                generate_key: "Generate Key",
                 cancel: "Cancel",
+                show_qr: "Show QR",
+                qr_modal_title: "Config QR Code",
+                qr_overflow_err: "This config is too long to fit in a QR code. Please use the download option instead.",
+                downloaded_zip: "Downloaded ZIP with {count} configs.",
+                drop_hint: "You can drag and drop files here",
                 tgParadise: "Telegram Paradise of Freedom:",
                 tgWireguard: "Telegram Wireguard Config:",
                 twitter: "Twitter (𝕏):",
-                github: "GitHub:"
+                github: "GitHub:",
+                // Clash Singbox strings
+                cs_input: "Input Format",
+                cs_auto: "Auto Detect",
+                cs_links: "Proxy Links (one per line)",
+                cs_clash: "Clash YAML",
+                cs_singbox: "Sing-box JSON",
+                cs_select_file: "Select File (.txt, .yaml, .json)",
+                cs_input_placeholder: "Paste proxy links, Clash YAML or Sing-box JSON here...",
+                cs_output_placeholder: "The converted output will appear here...",
+                cs_routing: "Routing Rules (Clash):",
+                cs_ir: "IR Rule (Recommended)",
+                cs_minimal: "Minimal (Proxy Only)",
+                cs_sb_mode: "Auto-test Mode (Sing-box):",
+                cs_tun: "TUN + Mixed",
+                cs_mixed: "Mixed/Socks Only",
+                cs_swap: "Swap Input / Output",
+                cs_output: "Converted Output",
+                cs_nodes_found: "Nodes Found:",
+                cs_nodes_out: "Nodes Out:"
             }
         };
 
@@ -1387,6 +1423,7 @@
             
             document.getElementById('helpIntro').innerText = i18n[currentLang].helpIntro;
             document.getElementById('helpFeaturesContent').innerText = i18n[currentLang].helpFeatures;
+            document.getElementById('helpSiteFeaturesText').innerText = i18n[currentLang].helpSiteFeaturesText;
 
             const helpBoxBody = document.getElementById('helpBoxBody');
             const v2rayHelpBoxBody = document.getElementById('v2rayHelpBoxBody');
@@ -1410,7 +1447,6 @@
             }
             updateTitleBarText();
             updateWgFileLabel();
-            updateProtonFileLabel();
             setupHelpTextByApp();
         }
 
@@ -1429,16 +1465,16 @@
                     ? "ابزار تبدیل ساختاری پروتکل وایرگارد برای کلاینت‌های مختلف."
                     : "WireGuard profile structural converter for standard clients.";
                 helpFeaturesContent.innerText = currentLang === 'fa'
-                    ? "• تبدیل فرمت .conf به Clash و AmneziaWG و Wiresock\n• تولید کلید و مقادیر پکت هرز به صورت سبک یا سنگین یا تصادفی\n• پردازش چند فایلی همزمان با امکان کپی و دانلود نتایج"
-                    : "• Converts standard .conf into Clash, AmneziaWG, and Wiresock profiles.\n• Generate Light, Heavy, or custom randomized Junk packet attributes.\n• Support multi-profile batch output with copy/download options.";
-            } else {
-                v2rayTitle.innerText = i18n[currentLang].protonHelpTitle;
+                    ? "• پشتیبانی کامل از کانفیگ‌های وایرگارد Proton VPN\n• تبدیل فرمت .conf به Clash و AmneziaWG و Wiresock\n• تولید کلید و مقادیر پکت هرز به صورت سبک یا سنگین یا تصادفی\n• پردازش چند فایلی همزمان با امکان کپی و دانلود نتایج"
+                    : "• Full support for Proton VPN WireGuard configs\n• Converts standard .conf into Clash, AmneziaWG, and Wiresock profiles.\n• Generate Light, Heavy, or custom randomized Junk packet attributes.\n• Support multi-profile batch output with copy/download options.";
+            } else if (currentActiveApp === 'clashSingbox') {
+                v2rayTitle.innerText = i18n[currentLang].csHelpTitle;
                 helpIntro.innerText = currentLang === 'fa'
-                    ? "مبدل و ویرایشگر پیشرفته و اختصاصی کانفیگ‌های شرکت Proton VPN."
-                    : "Advanced structural converter dedicated to Proton VPN wireguard profiles.";
+                    ? "مبدل دوطرفه لینک‌های خام، کلش و سینگ‌باکس با تشخیص خودکار."
+                    : "Bi-directional converter for raw links, Clash YAML, and Sing-box JSON with auto-detection.";
                 helpFeaturesContent.innerText = currentLang === 'fa'
-                    ? "• قابلیت حذف دسته‌جمعی پکت‌های هرز (No Junk)\n• قابلیت ویژه تفکیک و روتینگ ترافیک (Exclude LAN)\n• مولد هگز پیشرفته آمونیا ۱.۵ بر اساس تبدیل آدرس دامنه‌ها\n• ساختاربندی تخصصی فرمت کلاینت‌های Karing/Wiresock"
-                    : "• Mass strip junk packet configurations (No Junk option).\n• Exclude LAN subnets route generation feature.\n• Advanced offline Amnezia 1.5 Hex generator converting domains to binary keys.\n• Special WireSock/Karing structural parameters organizer.";
+                    ? "• ورودی: لینک‌های پروکسی (ss/ssr/vmess/vless/trojan/hysteria/hysteria2/http/socks5)، یا کانفیگ Clash YAML، یا کانفیگ Sing-box JSON — با تشخیص خودکار فرمت\n• خروجی: تبدیل به هرکدام از سه فرمت بالا\n• دکمه‌ی جابه‌جایی (swap) برای عوض‌کردن سریع ورودی/خروجی\n• کپی و دانلود خروجی\n• برای خروجی Clash: ست قانون «ایران» (دامنه‌ها/IP داخلی مستقیم، بقیه از پروکسی) یا حالت حداقلی\n• تشخیص پروتکل‌های ناشناخته و گزارش نودهایی که در فرمت مقصد ساپورت نمی‌شن (مثلاً SSR در Sing-box)"
+                    : "• Input: Proxy links (ss/ssr/vmess/vless/trojan/hysteria/hysteria2/http/socks5), Clash YAML, or Sing-box JSON — with auto-detection.\n• Output: Convert to any of the three formats.\n• Swap button for quick input/output reversal.\n• Copy and download output functionality.\n• For Clash Output: 'IR Rule' (direct local IPs/domains) or Minimal modes.\n• Detects unknown protocols and warns about unsupported nodes in destination formats (e.g., SSR in Sing-box).";
             }
         }
 
@@ -1461,12 +1497,12 @@
                 titleEl.innerText = i18n[currentLang].title;
             } else if (currentActiveApp === 'wireguard') {
                 titleEl.innerText = i18n[currentLang].wgTitle;
-            } else {
-                titleEl.innerText = i18n[currentLang].protonTitle;
+            } else if (currentActiveApp === 'clashSingbox') {
+                titleEl.innerText = i18n[currentLang].csTitle;
             }
         }
 
-        // --- Improved Clipboard Paste Handling with Native Prompt Fallback (Merged) ---
+        // --- Improved Clipboard Paste Handling with Native Prompt Fallback ---
         async function pasteFromClipboard() {
             let pastedText = "";
             try {
@@ -1480,7 +1516,12 @@
             }
             
             if (pastedText) {
-                document.getElementById('mainInput').value = pastedText;
+                if(currentActiveApp === 'v2ray') {
+                    document.getElementById('mainInput').value = pastedText;
+                } else if (currentActiveApp === 'clashSingbox') {
+                    document.getElementById('csInputArea').value = pastedText;
+                    runCSConversion();
+                }
                 showToast(i18n[currentLang].pasted);
             }
         }
@@ -1516,29 +1557,21 @@
             document.getElementById('ws_ib').selectedIndex = 0;
             document.getElementById('downloadBtn').classList.add('hidden');
             document.getElementById('copyBtn').classList.add('hidden');
+            if (document.getElementById('wgQrBtn')) document.getElementById('wgQrBtn').classList.add('hidden');
             proxyList = [];
 
-            // Proton Reset
-            document.getElementById('proton_wgFiles').value = '';
-            document.getElementById('proton_confInput').value = '';
-            document.getElementById('proton_yamlOutput').value = '';
-            document.getElementById('proton_jc1').value = '';
-            document.getElementById('proton_jmin1').value = '';
-            document.getElementById('proton_jmax1').value = '';
-            document.getElementById('proton_i1').value = '';
-            document.getElementById('proton_i2').value = '';
-            document.getElementById('proton_i3').value = '';
-            document.getElementById('proton_i4').value = '';
-            document.getElementById('proton_i5').value = '';
-            document.getElementById('proton_id').value = '';
-            document.getElementById('proton_ip').selectedIndex = 0;
-            document.getElementById('proton_ib').selectedIndex = 0;
-            document.getElementById('proton_awg15').checked = true;
-            document.getElementById('proton_nojunk').checked = false;
-            document.getElementById('proton_nolan').checked = false;
-            document.getElementById('proton_downloadBtn').classList.add('hidden');
-            document.getElementById('proton_copyBtn').classList.add('hidden');
-            protonProxyList = [];
+            // Clash/Singbox Reset
+            document.getElementById('csSubUrlInput').value = '';
+            document.getElementById('csFiles').value = '';
+            document.getElementById('csInputArea').value = '';
+            document.getElementById('csOutputArea').value = '';
+            document.getElementById('csInputFormat').value = 'auto';
+            document.getElementById('csOutputFormat').value = 'clash';
+            document.getElementById('csInputCount').innerText = '0';
+            document.getElementById('csOutputCount').innerText = '0';
+            document.getElementById('csStatusStrip').innerHTML = '';
+            document.querySelector('input[name="cs_rule_mode"][value="ir"]').checked = true;
+            document.querySelector('input[name="cs_sb_mode"][value="tun"]').checked = true;
 
             // Reset Shared View State
             allGeneratedLinks = [];
@@ -1547,9 +1580,6 @@
             document.getElementById('configsContainer').innerHTML = '';
 
             updateWgFileLabel();
-            updateProtonFileLabel();
-            toggleProtonAWG15Containers();
-            toggleProtonJunkContainer();
 
             showToast(currentLang === 'fa' ? 'تمامی ابزارها با موفقیت ریست شدند.' : 'All converters reset successfully.');
         }
@@ -1561,7 +1591,7 @@
 
             document.getElementById('v2rayView').classList.add('hidden');
             document.getElementById('wireguardView').classList.add('hidden');
-            document.getElementById('protonView').classList.add('hidden');
+            document.getElementById('clashSingboxView').classList.add('hidden');
             document.getElementById('resultsSection').style.display = 'none';
 
             if (type === 'v2ray') {
@@ -1570,9 +1600,9 @@
             } else if (type === 'wireguard') {
                 currentActiveApp = 'wireguard';
                 document.getElementById('wireguardView').classList.remove('hidden');
-            } else if (type === 'proton') {
-                currentActiveApp = 'proton';
-                document.getElementById('protonView').classList.remove('hidden');
+            } else if (type === 'clashSingbox') {
+                currentActiveApp = 'clashSingbox';
+                document.getElementById('clashSingboxView').classList.remove('hidden');
             }
             updateTitleBarText();
             setupHelpTextByApp();
@@ -1607,7 +1637,7 @@
         }
 
         // ==========================================================================
-        //  V2RAY Processing Methods (Sourced & Updated from jstovless.html)
+        //  V2RAY Processing Methods 
         // ==========================================================================
         async function fetchSubscription() {
             const urlInput = document.getElementById('subUrlInput').value.trim();
@@ -2200,7 +2230,7 @@
             return `\n- name: DPI\n  type: select\n  proxies:\n${proxyNames}`;
         }
 
-        function generateClashYaml() {
+        function generateClashYamlWg() {
             if (proxyList.length === 0) {
                 showToast(currentLang === 'fa' ? 'هیچ فایلی برای تبدیل پردازش نشده است.' : 'No processed files found for conversion.');
                 return;
@@ -2230,7 +2260,7 @@
             }).join('\n');
             const proxyGroups = generateProxyGroups(proxyList);
             const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${proxyGroups}`;
-            displayWgOutput(fullYaml, 'clash-config.yaml');
+            displayWgOutput(fullYaml, 'clash-config.yaml', 'clash');
         }
 
         function generateSingleAWGConfig(proxy) {
@@ -2280,7 +2310,7 @@
             }
             const awgConfigs = proxyList.map(generateSingleAWGConfig);
             const finalOutput = awgConfigs.join('\n\n');
-            displayWgOutput(finalOutput, 'amnezia.conf');
+            displayWgOutput(finalOutput, 'amnezia.conf', 'awg', generateSingleAWGConfig);
         }
 
         function generateSingleWiresocketConfig(proxy) {
@@ -2328,17 +2358,67 @@
             }
             const configs = proxyList.map(generateSingleWiresocketConfig);
             const finalOutput = configs.join('\n\n');
-            displayWgOutput(finalOutput, 'wiresock.conf');
+            displayWgOutput(finalOutput, 'wiresock.conf', 'wiresocket', generateSingleWiresocketConfig);
         }
 
-        function displayWgOutput(content, defaultFileName) {
+        function getWgConfigFileName(proxy, index, extension) {
+            let baseName = proxy.name || proxy.originalName || `config_${index + 1}`;
+            let cleanedName = baseName
+                .replace(/[\\/:*?"<>|]/g, '')
+                .replace(/\s+/g, '_')
+                .trim();
+            if (!cleanedName) {
+                cleanedName = `config_${index + 1}`;
+            }
+            return `${cleanedName}.${extension}`;
+        }
+
+        async function downloadWgZip(proxies, contentFn, extension, zipName) {
+            if (typeof JSZip === 'undefined') {
+                showToast('JSZip library not loaded');
+                return;
+            }
+            const zip = new JSZip();
+            proxies.forEach((proxy, idx) => {
+                try {
+                    const content = contentFn(proxy, idx);
+                    zip.file(getWgConfigFileName(proxy, idx, extension), content);
+                } catch (err) {
+                    console.error(`ZIP: skipping config ${idx + 1}:`, err);
+                }
+            });
+            try {
+                const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = zipName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                showToast(i18n[currentLang].downloaded_zip.replace('{count}', proxies.length));
+            } catch (err) {
+                showToast('ZIP error: ' + err.message);
+            }
+        }
+
+        function displayWgOutput(content, defaultFileName, format, perProxyContentFn) {
             document.getElementById('yamlOutput').value = content;
             const dlBtn = document.getElementById('downloadBtn');
             const cpBtn = document.getElementById('copyBtn');
+            const qrBtn = document.getElementById('wgQrBtn');
             dlBtn.classList.remove('hidden');
             cpBtn.classList.remove('hidden');
-            
+            if (qrBtn) qrBtn.classList.remove('hidden');
+
+            const extension = format === 'clash' ? 'yaml' : (format === 'wiresocket' ? 'conf' : 'conf');
+            const canZip = perProxyContentFn && proxyList.length > 1 && format !== 'clash';
+
             dlBtn.onclick = () => {
+                if (canZip) {
+                    downloadWgZip(proxyList, perProxyContentFn, extension, `wg-configs-${format}.zip`);
+                    return;
+                }
                 const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -2352,6 +2432,66 @@
                     showToast(i18n[currentLang].copied);
                 });
             };
+
+            wgQrState = {
+                format,
+                proxies: proxyList.slice(),
+                contentFn: perProxyContentFn || null,
+                combinedContent: content
+            };
+        }
+
+        let wgQrState = null;
+
+        function renderWgQrFor(text) {
+            const canvas = document.getElementById('wgQrCanvas');
+            const note = document.getElementById('wgQrNote');
+            note.textContent = '';
+            canvas.style.display = '';
+            try {
+                const cleanText = String(text).replace(/\r\n/g, '\n').trim();
+                new QRious({ element: canvas, value: cleanText, size: 256, background: '#ffffff', foreground: '#000000', level: 'L' });
+            } catch (err) {
+                canvas.style.display = 'none';
+                note.textContent = i18n[currentLang].qr_overflow_err;
+            }
+        }
+
+        function openWgQrModal() {
+            if (!wgQrState) return;
+            const modal = document.getElementById('wgQrModal');
+            const tabsBar = document.getElementById('wgQrTabsBar');
+            tabsBar.innerHTML = '';
+
+            if (wgQrState.contentFn && wgQrState.proxies.length > 1) {
+                tabsBar.classList.remove('hidden');
+                wgQrState.proxies.forEach((proxy, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'win98-btn';
+                    btn.style.fontSize = '10px';
+                    btn.innerText = proxy.name || `#${idx + 1}`;
+                    btn.onclick = () => {
+                        document.querySelectorAll('#wgQrTabsBar .win98-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        renderWgQrFor(wgQrState.contentFn(proxy, idx));
+                    };
+                    tabsBar.appendChild(btn);
+                });
+                tabsBar.firstChild.classList.add('active');
+                renderWgQrFor(wgQrState.contentFn(wgQrState.proxies[0], 0));
+            } else {
+                tabsBar.classList.add('hidden');
+                const singleContent = wgQrState.contentFn
+                    ? wgQrState.contentFn(wgQrState.proxies[0], 0)
+                    : wgQrState.combinedContent;
+                renderWgQrFor(singleContent);
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeWgQrModal() {
+            document.getElementById('wgQrModal').style.display = 'none';
         }
 
         document.getElementById('wgFiles').addEventListener('change', function(e) {
@@ -2378,14 +2518,79 @@
             updateWgFileLabel();
         });
 
+        function readDroppedWgFiles(files) {
+            let combined = '';
+            let loaded = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    combined += String(reader.result).trim() + '\n\n';
+                    loaded++;
+                    if (loaded === files.length) {
+                        document.getElementById('confInput').value = combined.trim();
+                        document.getElementById('confInput').disabled = false;
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function setupWgDragAndDrop() {
+            const dropZones = document.querySelectorAll('.wg-drop-zone');
+            dropZones.forEach(zone => {
+                ['dragenter', 'dragover'].forEach(evt => {
+                    zone.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.add('drag-over');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(evt => {
+                    zone.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.remove('drag-over');
+                    });
+                });
+                zone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (!files.length) return;
+                    
+                    if (zone.id === 'csUploadLabel' || zone.id === 'csInputArea') {
+                        const acceptedFiles = Array.from(files).filter(f =>
+                            f.name.endsWith('.txt') || f.name.endsWith('.yaml') || f.name.endsWith('.yml') || f.name.endsWith('.json')
+                        );
+                        if (!acceptedFiles.length) return;
+                        readDroppedCsFiles(acceptedFiles);
+                    } else {
+                        const confFiles = Array.from(files).filter(f =>
+                            f.name.endsWith('.conf') || f.type === '' || f.type === 'text/plain'
+                        );
+                        if (!confFiles.length) return;
+                        try {
+                            const dt = new DataTransfer();
+                            confFiles.forEach(f => dt.items.add(f));
+                            document.getElementById('wgFiles').files = dt.files;
+                            document.getElementById('wgFiles').dispatchEvent(new Event('change'));
+                        } catch {
+                            readDroppedWgFiles(confFiles);
+                        }
+                    }
+                });
+            });
+        }
+        setupWgDragAndDrop();
+
         function updateWgFileLabel() {
             const fileInput = document.getElementById('wgFiles');
             const labelText = document.getElementById('fileList');
-            const count = fileInput.files ? fileInput.files.length : 0;
-            if (count === 0) {
-                labelText.innerText = i18n[currentLang].no_files;
-            } else {
-                labelText.innerText = i18n[currentLang].files_selected.replace('{count}', count);
+            if (fileInput && labelText) {
+                const count = fileInput.files ? fileInput.files.length : 0;
+                if (count === 0) {
+                    labelText.innerText = i18n[currentLang].no_files;
+                } else {
+                    labelText.innerText = i18n[currentLang].files_selected.replace('{count}', count);
+                }
             }
         }
 
@@ -2396,7 +2601,9 @@
             document.getElementById('yamlOutput').value = "";
             document.getElementById('downloadBtn').classList.add('hidden');
             document.getElementById('copyBtn').classList.add('hidden');
+            document.getElementById('wgQrBtn').classList.add('hidden');
             proxyList = [];
+            wgQrState = null;
             updateWgFileLabel();
         }
 
@@ -2423,7 +2630,7 @@
                 });
                 
                 if (selectedFormat === 'clash') {
-                    generateClashYaml();
+                    generateClashYamlWg();
                 } else if (selectedFormat === 'awg') {
                     generateAWGYaml();
                 } else if (selectedFormat === 'wiresocket') {
@@ -2435,390 +2642,1054 @@
             }
         }
 
+
         // ==========================================================================
-        //  Proton VPN Processing Methods
+        //  Clash / Sing-box Processing Methods
         // ==========================================================================
-        function toggleProtonJunkContainer() {
-            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
-            document.getElementById('proton_junk_container').classList.toggle('hidden', nojunkEnabled);
-        }
 
-        function toggleProtonAWG15Containers() {
-            const awg15Enabled = document.getElementById('proton_awg15').checked;
-            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
-            
-            document.getElementById('proton_awg15_container').classList.add('hidden');
-            document.getElementById('proton_wiresock_container').classList.add('hidden');
-
-            if (awg15Enabled) {
-                if (selectedOption === 'proton_clash_radio' || selectedOption === 'proton_awg_radio') {
-                    document.getElementById('proton_awg15_container').classList.remove('hidden');
-                } else if (selectedOption === 'proton_karing_radio') {
-                    document.getElementById('proton_wiresock_container').classList.remove('hidden');
-                }
-            }
-            toggleProtonNolanContainer();
-            convertProton();
-        }
-
-        function toggleProtonNolanContainer() {
-            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
-            const nolanToggle = document.getElementById('proton_nolan');
-            if (selectedOption === 'proton_clash_radio') {
-                nolanToggle.disabled = true;
-                nolanToggle.checked = false;
-            } else {
-                nolanToggle.disabled = false;
-            }
-        }
-
-        function protonRandomJunk() {
-            const jc = getRandomInt(1, 100);
-            const jmin = getRandomInt(1, 200);
-            const jmax = getRandomInt(jmin + 1, 201);
-            document.getElementById('proton_jc1').value = jc;
-            document.getElementById('proton_jmin1').value = jmin;
-            document.getElementById('proton_jmax1').value = jmax;
-            document.getElementById('proton_junk3').checked = true;
-            convertProton();
-        }
-
-        function protonRandomAWG15() {
-            const hexPool = [
-                '<b 0xce000000010897a297ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135fa85e196d9ad980b150122129ce2a9379531b0fd3e871ca5fdb883c369832f730e272d7b8b74f393f9f0fa43f11e510ecb2219a52984410c204cf875585340c62238e14ad04dff382f2c200e0ee22fe743b9c6b8b043121c5710ec289f471c91ee414fca8b8be8419ae8ce7ffc53837f6ade262891895f3f4cecd31bc93ac5599e18e4f01b472362b8056c3172b513051f8322d1062997ef4a383b01706598d08d48c221d30e74c7ce000cdad36b706b1bf9b0607c32ec4b3203a4ee21ab64df336212b9758280803fcab14933b0e7ee1e04a7becce3e2633f4852585c567894a5f9efe9706a151b615856647e8b7dba69ab357b3982f554549bef9256111b2d67afde0b496f16962d4957ff654232aa9e845b61463908309cfd9de0a6abf5f425f577d7e5f6440652aa8da5f73588e82e9470f3b21b27b28c649506ae1a7f5f15b876f56abc4615f49911549b9bb39dd804fde182bd2dcec0c33bad9b138ca07d4a4a1650a2c2686acea05727e2a78962a840ae428f55627516e73c83dd8893b02358e81b524b4d99fda6df52b3a8d7a5291326e7ac9d773c5b43b8444554ef5aea104a738ed650aa979674bbed38da58ac29d87c29d387d80b526065baeb073ce65f075ccb56e47533aef357dceaa8293a523c5f6f790be90e4731123d3c6152a70576e90b4ab5bc5ead01576c68ab633ff7d36dcde2a0b2c68897e1acfc4d6483aaaeb635dd63c96b2b6a7a2bfe042f6aed82e5363aa850aace12ee3b1a93f30d8ab9537df483152a5527faca21efc9981b304f11fc95336f5b9637b174c5a0659e2b22e159a9fed4b8e93047371175b1d6d9cc8ab745f3b2281537d1c75fb9451871864efa5d184c38c185fd203de206751b92620f7c369e031d2041e152040920ac2c5ab5340bfc9d0561176abf10a147287ea90758575ac6a9f5ac9f390d0d5b23ee12af583383d994e22c0cf42383834bcd3ada1b3825a0664d8f3fb678261d57601ddf94a8a68a7c273a18c08aa99c7ad8c6c42eab67718843597ec9930457359dfdfbce024afc2dcf9348579a57d8d3490b2fa99f278f1c37d87dad9b221acd575192ffae1784f8e60ec7cee4068b6b988f0433d96d6a1b1865f4e155e9fe020279f434f3bf1bd117b717b92f6cd1cc9bea7d45978bcc3f24bda631a36910110a6ec06da35f8966c9279d130347594f13e9e07514fa370754d1424c0a1545c5070ef9fb2acd14233e8a50bfc5978b5bdf8bc1714731f798d21e2004117c61f2989dd44f0cf027b27d4019e81ed4b5c31db347c4a3a4d85048d7093cf16753d7b0d15e078f5c7a5205dc2f87e330a1f716738dce1c6180e9d02869b5546f1c4d2748f8c90d9693cba4e0079297d22fd61402dea32ff0eb69ebd65a5d0b687d87e3a8b2c42b648aa723c7c7daf37abcc4bb85caea2ee8f55bec20e913b3324ab8f5c3304f820d42ad1b9f2ffc1a3af9927136b4419e1e579ab4c2ae3c776d293d397d575df181e6cae0a4ada5d67ecea171cca3288d57c7bbdaee3befe745fb7d634f70386d873b90c4d6c6596bb65af68f9e5121e67ebf0d89d3c909ceedfb32ce9575a7758ff080724e1ab5d5f43074ecb53a479af21ed03d7b6899c36631c0166f9d47e5e1d4528a5d3d3f744029c4b1c190cbfbad06f5f83f7ad0429fa9a2719c56ffe3783460e166de2d8>',
-                '<b 0xc3000000010828cc76e6712c410c000044d0a2465e075ad0f01564ee338a44a2023493b8e15237b38843001050a4f4bf2a2cfb40695fe5ff42a70c0990053428d982902a32ca57e8b98909370223db26cd729039d5717f730c935603e2a1f7e452ebbeb6236f02198a9e5293322ab2895f935827f58ffe0a2ca638599a6218bc847fd5e1c801cd487cfb10d308156e7ce4c91cf522097cab6d079acc9e7ef18f231ee6ac13f7bd3d03db41dc27953d32d1aaa35932add5b567769a35fc7e3ec9175211afba7b945492b7f2e8b141c450585f09eb9c38a760b4f6fd36257830c47bd028f35ac1b00cbf6c59030d67363e28a8a2e70190a23fbcc10941537db75c01b82f8be3d0ba7fd0f9ab534a36dcefff49ecb9a63d3be1f14ab0376d4f9686fa6478816c183f07179778593821b89a035cfa92ec13c5cd2991180278ed125264fb3a512d0480a73d69218aad3477f2c741981da881a0146002435fd1f15a0c38715396ea6989b4275137f52ea5fd771e9dc0f552755062e21c996b36e97850bf70fce2f98d26837585d28219a7a30d0cc910ff04a920bb69c714c0142193f267d917aab11058f197a6a66cd752aff348d334186bf91a69843f3452b953fc732449c58dc8aa4bcac89aa661f90891da751978f17a62f7b8f847f440f7210dd05574dbd78e4feb4ac478f275f4044c7170f74221abdda3b8fc0c129ae35d3fabac349d81ba9042b4782819ea81665d06691195bd9e7abf6f0e065a092811e9ea5b113207ef06de5768ebe62e8ee94ae4beb5bc4f9996c2c70c7d620da7fedbb2b9709a45584b5ae0fdc1f746b4afc7f100bc2888611b46e2ac243e136bb100e9db3022f472aac8801e77d15960a031e3f8fea5cf8f8703bdb1357800adc802b702c547f4e5f75eb4b6e5eb9327876c77dcfb3baf696a276d6779ab337fc1aa0b03222a6acda0b04a4220f77fd04ce14f083445e55ff88260834582531d759683e1b2d8abc885664cfba1f49f9bdcf26fca845fde45a0ca08a90794cf70338f1031c5098664f10e830d5b3437c7c367c8a0faa16d81471111b616b2f710edfcab27f5f1a7a33daa20ea6e8e5dcd624c6d8f2c048543d025eb970a8eb8aa09c8b4d0be42d6426961a624e37366c21b7e6ca24d09aa3e46a03e3dfc09eafd9d213752b2ca903d11626eb672d5dc116507c6cd2e43f59a6c964937cd9d8f1e54b05f4486c780c46a5718a3baedf93a5cd9b374097bc6db16aa272b6e0a935b35c3f721e206804c45ec5b4a4dadfbb28a9bd08d4a1590f05ef21185c00f8ca250fb31fe549845d39b6ced2e64c00ad5dac27d550313ac778a981a8b5ce2290bb2d90a50717f004d66ff122a395bba9fc67d38bfbfd549389622431afd241ce7a0d755e7016ee37ada01b09e51f4f39aa3785cc162726d23ad98e1f6d1f4346bd221b7401334d89c07e1ede4aec076933ae6d39bddef5d76e7d1fe8053fb1aca8c35d61b60648c5a1487365b0ca365c1689d8fbfc2267f24cbf90474c92be350f5e664b01ef1c8538b25296d643ceed009cb5da29c0a451be67ef626237066946379385f9c79276117598cd462ac0221fe93a46034df330144f9ccfc5d8560e8df7b19849cf7d65b79f21d3f05f61496ac7da3ffaf87b14171cb7e959c3e98fdef862f7cbf9eaebae74b1c9b09d102bff1fc82e0cf32c96b4dcc5cba0d7d3555bc8a5c722965af0c0c2f0dbb24ca1cbde23cfcd39ce86ecffe102f48cf657833fe578e5439>', '<b 0xce000000010801bb8fd47f76e35a000044d0506fda47bd5feb11d112f0f4faac71f58212d234a6c10dba88715411aa0444f4797e1fcab030a5c527e7c7b8f995357a2adc0300aa89ee67d840dfa49fe175ade73ed5ff4e93a3478a6ac9b7a30aa423852a16bdc005dc1529d1531a7a721bdf9a374c54d0fbd847e4e1ab9b16f59f79bf47c2160493b8a6782ec37e418398fc4db3d2ca4315d4df833144246faa9fea16f41a9f4f71954f16e61c4a9335486044f196e202794dacb39e25cebfa95eb18d9cb576b5ca69062dbf7261b004ff46a36cf8ad32365b3e640c9e7247a4a620c6db308386f9d7ee36fb01fce5ca7dd1e47902c6013e695a3741c28a21af9c57274e009923e7028fc16cfdd3a0f4b2aa647798592271ff17307f629b5ee0b3f874305f1edd0c95ac81a7a965cf39062c70ed36d6e734e6f456266b52a02fa9f8ce4763832f75e6ebad3c75eb61e95e660347e3dcdcb41968370dbd6765ee4f80e020de0725b5847656db58fac5ddc097201f7178fd686020d492c8fe5bbd43d64335047976760c3fdabcc49a6b637660866afba983e657b1a05c64718a15c0599481a7d6ea923eacde9392dce535dde5584dff91b975246bac444972b98f95a54d9a50c94b07aef84cb538c6fd3808205120e6a0b64289a6e3934bc0847712ccf6b76ce725f0899e952c18c0b6743eb629e187a5a2457f1ac700cf7e53616fc239331e09c52265af4219d3bccd203f9af1d14554fc836a12df0076f71d7c7e38233239faf9a1d7ea77a09c602290a186e78ddf379ee353d51a3b12bbd3552362bd2f165a91c5a3e4c5d29f0a38dd295d9c1abbbce33b1a5a105c6fe409c674bac10aacff349229f40c8f27b4332564ae1cfdbf48807ee3d562f8793efa7e81f7dec9640f5a2d1be2d9cff30b7d247abdb4c2a7f5fb5ae24cc884416deac3b4f30b6031c820dd2c378a3b54746416b6963a52c7661953c36a03e96f3d3e039c8d97534f8643b23dea6fb2d57e243011b56e72a25f0872a699cabfc5154f1769888b289d001d108a24097c810be0029af7cf22d5a9ce2b5dd077a6ad46952387113af426f4ae9cfa2c6723d37510d31a9b2b2a3cb013badf5a9eec7337f311a128f3661233d23ee93c4f8677002081dd68be9ec0fd9dabb927bdf73dfb22a3ea670d27a47dd7c12aab429afe9b88b97431104fdd8bcdd7b3663f1e43414ced191d66be0570b3a84e7907aa6a46875364a7df197f10983fe8dc4be8beadba8f670fa58a3dd75c27c66880a1c0dcc947274d6d77113cbf39476d7a3826e491bcf592c30989fe00c00823180c014d0fa2bb535752f2c73bcd8a9e258cff0a5906574d1e710e9e232a9f5d8022b354d25d029fd9c9d7b2e039963b661ce28a1a69b58936fb66398be425ce895c2a1e9d6090bf3e1267a003b30093088d41520b549f03bca5b4ff5ba18b7edb10bb4747a5146aa6a261226736b2c4bb0074fe7a0b3d3af693081d28f014981444728a85f6e0d4aa6566bd748ef8416526e638446806fa36c18558b818517add83a59d442d20bc09dc492cbe563b36e1fa02f218ed6ec650ffe6303b161ab4094d048b2d9cda27a0ebbff818cca884faaa16ab3efbde753b96f672777a58d16322a540a73c74a8611eb64054f7334f33d960726de23fe0e53d564714f085e270d2167a45521aadbdc5fac6192c25559c1f8f9ca66984a29863e1f9f799541484a4f361ee95a7b1e49912d2e538e5016235c8f7d0bc93f5>','<b 0xc70000000108df2b1b6970a3feeb000044d0ed2f8959a3b417c660df11a4450acf495f1cc1769fd0a540acbe890d40b5fdca6a2a4e815be972b62c55b5bd0cabf1912e79770f5144aadf2489a8bba6cf68cc4db1d8cec0a6d8e855e3f2a799632d9e705f05a99f09ca1d392de1228e0433f5a56d58772076d1f6c1a91e470a970074b7055425d19244e6eb9757bc10287d0267e02fd2b825a849187f848c89e44b182be8563f5a489d5722b68f7c5c0bc76895f9dff4bd955160001012deb3439dd93fa282df25377e9d00c960b6e48f9ca55f0cc97b4f0d3f034956c9df7fafca1b0c4bd313fe576c4bfecb8205765509ecab8c442a4bd4c483374b9ef328b77caf063ee13db140f7946a3d61e0cb8b083b91991d08db544baff4678b327b015b95db8bc90e28d604d927a1da4392d23093a214ca713e65b66e87d7ffb88664f77167db4ac6560a4ebbee324ff964a9949149782dd5d49594aaddcb752ad1f6eafbb84360175bd9529e1467f53ffbe9044b40e0fee663e8c589893b3ceab34a777e81c5971e88cc923bf0203e6ff2414de93ba98dba342269c6230c2cbf3bd48ea0bfaebf19597957078540122e7c461d151f2a25d7148e2c4f599c95caca321aa02aea7e583b01b07fc89c9e3945fa0ac57d894621197549c4862259981074cf4d077896e676dded2504904f54e291591bcc1118ccb7618ae21b35620c4ec8f8f1a26c1adb5ad9c9b63fbc5795f1997f37ae9ac5467267e7a63e4b21f798b404e78db54d987700550495f2f95529223d7297a4d5857340285624510dbe60276acbb56ec535bb09ce6fe14aa4448d7d1e5b76fb8ae7839c23259d5abb576980dc8ad2b4baf2359c6398452e6615099e87f8b9ca234ee6857713d2319d36020ed040245bd435d50af58216e1a6afb89b1e23240ee6554307475da43962c955eabe87d19f3614c5b60a110da771dd49a47b521af4cf4d4a5e29be93c6c9601c44b6d6c21a750c56c2fec3c9b744ad8496a3fb640ae7ce5a625f78c2d20a38f09cbae8ef0d1e1516470c1bc9bd86ab5596026dda6967a165cc29bd274bc69e5d5250b4c2d77ea79b057083edad33bf94f4f8eb57c6578d987615f3b37b934e18fc6c76d1ce3361ec9aaea32a7acc40bf1939c1e928dbd6b1741486d3b87b37e1c77207f70debee025caa6c4d6605b2b76d42429895f7376230299e644361c6c4ac2769009016192ea88d7cd2fbd2263fe8a19e38edc562fc14cf207128a757a672daf53af301c12d1b2e7ca1ba3305613baa482845253bd7dd0394e8c8bfdfb4227ab7a22112ef2194161a6b92fb7eaadb6974246beee5e578d84182fbcfd24a05d11860a86e445d91cd2fb32c2913100a3657191ff17d6f02a8c554753ed07e9f0a6c944dc380ca3b1fa6a432db7d63c4235e9a473dbfbe09a7a9bc7713a95c9fedc3911ba0caa2f26e981eef132e58b395b904f8542824b7a3af44e40543a0ce227d88abedd936252a6c7f77d4c5d40906e6ff269b3aac3653260da037e65f8fea00d597f3ca9d082a36f07cbc209032b84b975034ea817da90e89bff1ce8b534dc8c3b1f9445454db7411c88bc3804925b3c2b6f7ecddc309d451cd6ade1b716f83990d37c1df0a44bdd9b49eebe8abe5d3294bfc14485e30823cd20cced0c1f4549a8c07e6c2161305ea92a6e45250305bf559f629f325d03e5d6482ea4bf5953ece20514374cda7878c955c51c5c6fd79e053d64e354b8c01858409e2fb928896>', '<b 0xc0000000010892b06b4ebbca0bc7000044d057c592e23d34c9c3deca7a7cd33a1db8a4f853b48ab16f04e3c7fd20807f9b80954c849cac06879170c668ce2055d423bda127002d560066c2687ff3b688125269defb288ece048019c9812c55fbb016cf95fd73fd428b1f2efdd7e10c174fd1e6757a347214b443105777429c8cddd2e1fc77856fc41cabfc4781eca3027ecd073c7e4dd4e688e47f3d5d4831a37d0059f89bdcf055f11184725db456dcda8d0d3ee0e2f5dd4ce6aa039099e95b8c966210cb35dd4f7437e6e68d64c0d5d33aef8523af522e03de47ea6bb43b8bf1a96fc16ff4fd76d8a4c338f88360f69aed686fd82be98f17abb94ac63a0d9210840a4528ef25f91e7a0d91b6223e9b06b75465c94dd7e28f4194d25bab33ec618813c614a654b9dd420c2729e0202fbaf26e11268b6e50f2287452c3c81dacef3d98db8b7f4144bf70d70f6d72614167509afc874843843cbb73b302997cdafadd41850b0cb99a0b272b06e2c0001e6fda4fee44036b62ce27aea485a39a33c48e0ce97a7977c76d140f7df98b1a1cc46631a905041c76682dd2a8e07ab784f92d44c172d13405c3d87232aa539187c38d82096c17f5ccf76299465be7d25e81cf4bab3092846f158bec336d661cdd232b41b91fb50610e9113bc355dd92e404b7d91b288069397627c723202860658d995e94d4fefc005dda2df80d757aa5bc7a233b4b5807ccf28ebefcf6f70f8c513c55d5e9ff658e51583a0e460724db85b1e61891638817793542d5520a1d2536e08ddda1c11ba28173d7371d0bf6dde4a3aa4b826af64d307d97d471f5665f328af478abc70b8cefc24a0a90a6ed5caae5c4ce25167598600333943731aea8324e985ada2ab7ab1ea428ff8d3ecf8b272690e5b0ea1c5b4aa827b812cc5dd0b970b18ac88061a44255f5f638651ba5286d1decb8596b26f87730cd5de955f54a331f15e0c3edfea2b354e8418ac5c113f9dab98cd3822d7bc72cf29511abcdd56712f270f15419d1bab3b7e4a9320f41849e42b7ce3717c38f3b207867714a808f4f964fd4e51440a607b6efcef650cc7719227376b165e929c382ca943527c66e274ae9da0840b8f91f2d581a92e0c013155b4395f4c459e5e5089f9c3638098763d9485223d96c20e964e5bbec40c6fd920d746539dbca1ffdf1fbdeefa2256e7c8622566bbcfa0b60a573a13b6452e6b7ffe312c43475563fa5227fd50d450c022a6b46fb0f43a432dd84390ee337f6107bde0f4aecf0d58b3be6a5fb2b0e65bea782202f05ff145fb2561cbb29a536cd40bbb9058b673501798484af393423d84756af0a9813ef355c09f3112b80cb785b567aa36d7055a08e475c369c1c750c7c937655486075145863d29424a2442d3ea935e04c21d486d9c476f969dbc862d8e72e50b1c9880703a892f1d78a56ac336ac43e0a73de92bbbbc6d27b15f8ede377a43d39ba6f3c78b68da50a1f12bd8066bb572673210c6971f59af59d7c17245968b7f0d2fe8e9f141aaf99e6de7e0e9208d7a6dc83b9d9846bb0d01684ba9f1c9cdf07698549566466c20fc7cf2c679fc7aedeac59f534cd68e2e9ce7181fd9137f38431e708627101f3bf76a849ba5add5cf33508c8858e0ac587050eaecdf7e479a88eba4cc08d22d0c37cf12ce115eb4ee7a99302692d5cff8446486db739fa5db193a798776f879aabdffe5a3df911f7eb0a7e9b01d1fb7fad1392c9e4be307c329f7120edb4186c457f58>'];
-            const randomHex = hexPool[Math.floor(Math.random() * hexPool.length)];
-            document.getElementById('proton_i1').value = randomHex;
-            document.getElementById('proton_i2').value = '';
-            document.getElementById('proton_i3').value = '';
-            document.getElementById('proton_i4').value = '';
-            document.getElementById('proton_i5').value = '';
-            convertProton();
-        }
-
-        function protonRandomWiresock() {
-            const domains = ['apteka.ru', 'psbank.ru', 'lenta.ru', 'rzd.ru', 'rutube.ru', 'gosuslugi.ru'];
-            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
-            document.getElementById('proton_id').value = randomDomain;
-            convertProton();
-        }
-
-        function openDomainModal() {
-            document.getElementById('domainModal').style.display = 'flex';
-        }
-
-        function closeDomainModal() {
-            document.getElementById('domainModal').style.display = 'none';
-        }
-
-        async function generateI1FromDomain(domain) {
-            let hash = 0;
-            for (let i = 0; i < domain.length; i++) {
-                hash = domain.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const hex = Math.abs(hash).toString(16).padEnd(8, 'a');
-            return `<b 0xc60000000108${hex}97ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135f>`;
-        }
-
-        async function confirmDomainModal() {
-            const domain = document.getElementById('proton_domain_input').value.trim();
-            if (domain) {
-                const i1Val = await generateI1FromDomain(domain);
-                document.getElementById('proton_i1').value = i1Val;
-                closeDomainModal();
-                convertProton();
-            } else {
-                showToast(currentLang === 'fa' ? 'لطفاً دامنه معتبری وارد کنید.' : 'Please enter a valid domain.');
-            }
-        }
-
-        document.getElementById('proton_wgFiles').addEventListener('change', function(e) {
-            const files = e.target.files;
-            if (!files.length) {
-                updateProtonFileLabel();
+        async function fetchCSSubscription() {
+            const urlInput = document.getElementById('csSubUrlInput').value.trim();
+            if (!urlInput) {
+                showToast(currentLang === 'fa' ? 'لطفاً لینک سابسکریپشن را وارد کنید.' : 'Please enter subscription link.');
                 return;
             }
+
+            const spinner = document.getElementById('csFetchSpinner');
+            const textSpan = document.getElementById('csFetchBtnText');
+            spinner.style.display = 'inline-block';
+            textSpan.innerText = i18n[currentLang].loading;
+
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlInput)}`;
+            try {
+                let response = await fetch(urlInput).catch(() => null);
+                if (!response || !response.ok) {
+                    response = await fetch(proxyUrl);
+                }
+                if (!response.ok) throw new Error();
+                const rawContent = await response.text();
+                if (!rawContent || rawContent.trim() === '') throw new Error();
+                let processedContent = rawContent.trim();
+                
+                const decoded = safeAtob(processedContent);
+                if (decoded && (decoded.includes('://') || decoded.includes('{') || decoded.includes('['))) {
+                    processedContent = decoded;
+                }
+                
+                document.getElementById('csInputArea').value = processedContent;
+                runCSConversion(); 
+                showToast(currentLang === 'fa' ? 'اطلاعات با موفقیت دریافت و رمزگشایی شد.' : 'Subscription content fetched & decoded successfully.');
+            } catch (error) {
+                showToast(i18n[currentLang].fetchErr);
+            } finally {
+                spinner.style.display = 'none';
+                textSpan.innerText = i18n[currentLang].fetchBtn;
+            }
+        }
+
+        function base64DecodeCS(str){
+            try{
+                let s = str.replace(/-/g,'+').replace(/_/g,'/');
+                const padded = s + '='.repeat((4 - s.length % 4) % 4);
+                const decoded = atob(padded);
+                const bytes = new Uint8Array(decoded.length);
+                for (let i=0;i<decoded.length;i++) bytes[i] = decoded.charCodeAt(i);
+                return new TextDecoder('utf-8').decode(bytes);
+            }catch(e){ return ''; }
+        }
+
+        function base64EncodeCS(str){
+            const bytes = new TextEncoder().encode(str);
+            let binary = '';
+            for (const b of bytes) binary += String.fromCharCode(b);
+            return btoa(binary);
+        }
+
+        function b64EncodeUrlSafeCS(str){
+            return base64EncodeCS(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        }
+
+        function parseUrlParamsCS(url){
+            const params = {};
+            const qs = url.includes('?') ? url.split('?')[1] : url;
+            if(!qs) return params;
+            qs.split('&').forEach(p=>{
+                const idx = p.indexOf('=');
+                if(idx===-1){ if(p) params[decodeURIComponent(p)]=''; return; }
+                const k = p.slice(0,idx), v = p.slice(idx+1);
+                if(k) params[decodeURIComponent(k)] = v? decodeURIComponent(v):'';
+            });
+            return params;
+        }
+
+        function safeJsonParseCS(str, def){ try{ return JSON.parse(str); }catch(e){ return def; } }
+
+        function parseSS(link){
+            if(!link.startsWith('ss://')) return null;
+            try{
+                const rest = link.slice(5);
+                const hashIndex = rest.indexOf('#');
+                const mainPart = hashIndex!==-1 ? rest.slice(0,hashIndex) : rest;
+                const name = hashIndex!==-1 ? decodeURIComponent(rest.slice(hashIndex+1)) : 'SS';
+
+                let decoded = base64DecodeCS(mainPart);
+                if(decoded && decoded.includes('@')){
+                    const atIndex = decoded.lastIndexOf('@');
+                    const userInfo = decoded.slice(0,atIndex);
+                    const serverInfo = decoded.slice(atIndex+1);
+                    const colonIndex = userInfo.indexOf(':');
+                    const method = userInfo.slice(0,colonIndex);
+                    const password = userInfo.slice(colonIndex+1);
+                    const [server, portStr] = serverInfo.split(':');
+                    const port = parseInt(portStr,10);
+                    return {name, config:{name,type:'ss',server,port,cipher:method,password,udp:true}};
+                }
+                const atIndex = mainPart.indexOf('@');
+                if(atIndex!==-1){
+                    const encodedUserInfo = mainPart.slice(0,atIndex);
+                    const serverInfo = mainPart.slice(atIndex+1);
+                    decoded = base64DecodeCS(encodedUserInfo);
+                    if(decoded){
+                        const colonIndex = decoded.indexOf(':');
+                        const method = decoded.slice(0,colonIndex);
+                        const password = decoded.slice(colonIndex+1);
+                        const [server, portStr] = serverInfo.split(':');
+                        const port = parseInt(portStr,10);
+                        return {name, config:{name,type:'ss',server,port,cipher:method,password,udp:true}};
+                    }
+                }
+                return null;
+            }catch(e){ return null; }
+        }
+
+        function parseSSR(link){
+            if(!link.startsWith('ssr://')) return null;
+            try{
+                const rest = link.slice(6);
+                const hashIndex = rest.indexOf('#');
+                const mainPart = hashIndex!==-1 ? rest.slice(0,hashIndex) : rest;
+                const nameRaw = hashIndex!==-1 ? decodeURIComponent(rest.slice(hashIndex+1)) : null;
+                const decoded = base64DecodeCS(mainPart);
+                const queryIndex = decoded.lastIndexOf('/?');
+                const configMainPart = queryIndex!==-1 ? decoded.slice(0,queryIndex) : decoded;
+                const paramsStr = queryIndex!==-1 ? decoded.slice(queryIndex+2) : '';
+                const params = parseUrlParamsCS(paramsStr);
+                const parts = configMainPart.split(':');
+                const server = parts[0], port = parts[1], protocol = parts[2], method = parts[3], obfs = parts[4];
+                const passwordB64 = parts.slice(5).join(':');
+                const password = base64DecodeCS(passwordB64);
+                const nodeName = nameRaw || (params.remarks ? base64DecodeCS(params.remarks) : 'SSR');
+                const cipher = method === 'none' ? 'dummy' : method;
+                const config = {name:nodeName,type:'ssr',server,port:parseInt(port,10),cipher,password,protocol,obfs};
+                if(params.protoparam) config.protocolparam = base64DecodeCS(params.protoparam) || params.protoparam;
+                if(params.obfsparam) config.obfsparam = base64DecodeCS(params.obfsparam) || params.obfsparam;
+                if(params.group) config.group = base64DecodeCS(params.group);
+                return {name:nodeName, config};
+            }catch(e){ return null; }
+        }
+
+        function parseVmessLink(link){
+            if(!link.startsWith('vmess://')) return null;
+            try{
+                const rest = link.slice(8);
+                const hashIndex = rest.indexOf('#');
+                const encoded = hashIndex!==-1 ? rest.slice(0,hashIndex) : rest;
+                const nameRaw = hashIndex!==-1 ? decodeURIComponent(rest.slice(hashIndex+1)) : null;
+                const decoded = base64DecodeCS(encoded);
+                const cfg = safeJsonParseCS(decoded, null);
+                if(!cfg) return null;
+                const nodeName = nameRaw || cfg.ps || 'Vmess';
+                const config = {
+                    name: nodeName, type:'vmess', server: cfg.add, port: parseInt(cfg.port,10),
+                    uuid: cfg.id, alterId: parseInt(cfg.aid || '0',10), cipher: cfg.scy || 'auto',
+                    network: cfg.net || 'tcp', tls: cfg.tls==='tls' || cfg.tls===true || cfg.tls==='true',
+                    udp: true,
+                    'skip-cert-verify': cfg.allowInsecure==='true'||cfg.allowInsecure==='1'||cfg.allowInsecure===1,
+                    servername: cfg.sni || cfg.host || ''
+                };
+                if(cfg.net === 'ws'){
+                    config['ws-opts'] = { path: cfg.path || '/', headers: cfg.host? {Host: cfg.host}: undefined };
+                }
+                if(cfg.net === 'grpc'){
+                    config['grpc-opts'] = { 'grpc-service-name': cfg.path || '' };
+                }
+                return {name:nodeName, config};
+            }catch(e){ return null; }
+        }
+
+        function parseTrojanLink(link){
+            if(!link.startsWith('trojan://')) return null;
+            try{
+                const url = new URL(link);
+                const params = parseUrlParamsCS(url.search.slice(1));
+                const name = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'Trojan';
+                return {name, config:{
+                    name, type:'trojan', server:url.hostname, port: parseInt(url.port,10),
+                    password: decodeURIComponent(url.username), udp:true,
+                    'skip-cert-verify': params.allowInsecure!=='false' && params.allowInsecure!=='0',
+                    sni: params.sni || params.peer || '', network: params.type || 'tcp'
+                }};
+            }catch(e){ return null; }
+        }
+
+        function parseHysteria2(link){
+            if(!link.startsWith('hysteria2://')) return null;
+            try{
+                let rest = link.slice(12);
+                const hashIndex = rest.indexOf('#');
+                const name = hashIndex!==-1 ? decodeURIComponent(rest.slice(hashIndex+1)) : 'Hysteria2';
+                if(hashIndex!==-1) rest = rest.slice(0,hashIndex);
+                const queryIndex = rest.indexOf('?');
+                let params = {};
+                if(queryIndex!==-1){ params = parseUrlParamsCS(rest.slice(queryIndex+1)); rest = rest.slice(0,queryIndex); }
+                const atIndex = rest.indexOf('@');
+                if(atIndex===-1) return null;
+                const password = decodeURIComponent(rest.slice(0,atIndex));
+                let serverInfo = rest.slice(atIndex+1);
+                if(serverInfo.endsWith('/')) serverInfo = serverInfo.slice(0,-1);
+                const [server, portStr] = serverInfo.split(':');
+                const port = parseInt(portStr,10);
+                if(!server || isNaN(port)) return null;
+                const config = {
+                    name, type:'hysteria2', server, port, password,
+                    'skip-cert-verify': params.insecure==='1', sni: params.sni || ''
+                };
+                if(params.obfs) config.obfs = params.obfs;
+                if(params['obfs-password']) config['obfs-password'] = params['obfs-password'];
+                return {name, config};
+            }catch(e){ return null; }
+        }
+
+        function parseHysteria(link){
+            if(!link.startsWith('hysteria://')) return null;
+            try{
+                const url = new URL(link);
+                const params = parseUrlParamsCS(url.search.slice(1));
+                const name = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'Hysteria';
+                return {name, config:{
+                    name, type:'hysteria', server:url.hostname, port: parseInt(url.port,10),
+                    auth_str: params.auth || '', protocol: params.protocol || 'udp',
+                    'skip-cert-verify': params.insecure==='1', sni: params.peer || '',
+                    up: parseInt(params.upmbps||'10',10), down: parseInt(params.downmbps||'50',10),
+                    alpn: params.alpn? [params.alpn] : ['h3']
+                }};
+            }catch(e){ return null; }
+        }
+
+        function parseVlessLink(link){
+            if(!link.startsWith('vless://')) return null;
+            try{
+                const url = new URL(link);
+                const params = parseUrlParamsCS(url.search.slice(1));
+                const name = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'VLESS';
+                const config = {
+                    name, type:'vless', server:url.hostname, port: parseInt(url.port,10),
+                    uuid: decodeURIComponent(url.username), network: params.type || 'tcp',
+                    flow: params.flow || '', 'skip-cert-verify': params.allowInsecure==='1'
+                };
+                if(params.security==='tls' || params.security==='reality'){
+                    config.tls = true; config.servername = params.sni || '';
+                }
+                if(params.security==='reality'){
+                    config['reality-opts'] = { 'public-key': params.pbk||'', 'short-id': params.sid||'' };
+                    config['client-fingerprint'] = params.fp || 'chrome';
+                }
+                if(params.type==='ws'){
+                    config['ws-opts'] = { path: params.path||'/', headers: params.host? {Host:params.host}: undefined };
+                }
+                if(params.type==='grpc'){
+                    config['grpc-opts'] = { 'grpc-service-name': params.serviceName || params.service || '' };
+                }
+                return {name, config};
+            }catch(e){ return null; }
+        }
+
+        function parseHttpLink(link){
+            if(link.startsWith('https://t.me/socks') || link.startsWith('https://t.me/http')) return null;
+            if(!link.startsWith('http://') && !link.startsWith('https://')) return null;
+            try{
+                const url = new URL(link);
+                const name = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'HTTP';
+                return {name, config:{
+                    name, type:'http', server:url.hostname,
+                    port: parseInt(url.port || (url.protocol==='https:'?'443':'80'),10),
+                    username: decodeURIComponent(url.username), password: decodeURIComponent(url.password),
+                    tls: url.protocol==='https:'
+                }};
+            }catch(e){ return null; }
+        }
+
+        function parseSocks5Link(link){
+            if(!link.startsWith('socks5://') && !link.startsWith('socks://')) return null;
+            try{
+                const url = new URL(link);
+                const name = url.hash ? decodeURIComponent(url.hash.slice(1)) : 'SOCKS5';
+                return {name, config:{
+                    name, type:'socks5', server:url.hostname, port: parseInt(url.port||'1080',10),
+                    username: url.username? decodeURIComponent(url.username): undefined,
+                    password: url.password? decodeURIComponent(url.password): undefined
+                }};
+            }catch(e){ return null; }
+        }
+
+        function parseTelegramLink(link){
+            if(!link.startsWith('https://t.me/socks') && !link.startsWith('https://t.me/http')) return null;
+            try{
+                const params = parseUrlParamsCS(link);
+                const server = params.server, port = params.port;
+                if(!server || !port) return null;
+                const isSocks = link.includes('/socks');
+                const type = isSocks? 'socks5':'http';
+                const name = isSocks? 'SOCKS5':'HTTP';
+                return {name, config:{
+                    name, type, server, port: parseInt(port,10),
+                    username: params.user || undefined, password: params.pass || undefined
+                }};
+            }catch(e){ return null; }
+        }
+
+        const CS_KNOWN_PROTOCOLS = new Set(['ss','ssr','vmess','trojan','hysteria','hysteria2','vless','http','https','socks','socks5']);
+        
+        function parseProxyLinkCS(link){
+            link = link.trim();
+            if(!link) return null;
+            const protocol = link.split(':')[0].toLowerCase();
+            const hasKnown = CS_KNOWN_PROTOCOLS.has(protocol);
+            if(hasKnown && link.includes('://')){
+                const protoEnd = link.indexOf('://');
+                link = link.substring(0,protoEnd).toLowerCase() + link.substring(protoEnd);
+            }
+            if(/^https:\/\/t\.me\/(socks|http)/.test(link)){
+                const r = parseTelegramLink(link);
+                if(r) return r;
+            }
+            const parsers = [parseSS,parseSSR,parseVmessLink,parseTrojanLink,parseHysteria2,parseHysteria,parseVlessLink,parseHttpLink,parseSocks5Link];
+            for(const p of parsers){
+                const r = p(link);
+                if(r) return r;
+            }
+            return null;
+        }
+
+        function parseMultipleProxiesCS(input){
+            const lines = input.split(/[\r\n]+/);
+            const proxies = [];
+            const unsupported = [];
+            const nameCount = new Map();
+            let defaultNameCounter = 0;
+            const defaultProtocolNames = new Set(['SS','SSR','Vmess','Trojan','Hysteria','Hysteria2','VLESS','HTTP','SOCKS5','Telegram']);
+
+            for(const line of lines){
+                const t = line.trim();
+                if(!t || t.startsWith('#')) continue;
+                const result = parseProxyLinkCS(t);
+                if(result){
+                    const config = result.config;
+                    const originalName = config.name;
+                    if(defaultProtocolNames.has(originalName)){
+                        defaultNameCounter++;
+                        config.name = `defaultName_${defaultNameCounter}`;
+                    } else {
+                        const c = nameCount.get(originalName) || 0;
+                        nameCount.set(originalName, c+1);
+                        config.name = originalName;
+                    }
+                    proxies.push(config);
+                } else if(t.includes('://')){
+                    const protocol = t.split(':')[0].toLowerCase().trim();
+                    const isValid = /^[a-z0-9]+$/.test(protocol);
+                    if(isValid && protocol && !CS_KNOWN_PROTOCOLS.has(protocol)){
+                        unsupported.push(protocol);
+                    }
+                }
+            }
+
+            const occurrenceCount = new Map();
+            for(const proxy of proxies){
+                const originalName = proxy.name;
+                if(defaultProtocolNames.has(originalName)) continue;
+                const total = nameCount.get(originalName) || 0;
+                if(total > 1){
+                    const c = occurrenceCount.get(originalName) || 0;
+                    occurrenceCount.set(originalName, c+1);
+                    proxy.name = `${originalName}_${c+1}`;
+                }
+            }
+            return {proxies, unsupported};
+        }
+
+        const CS_Adapters = {
+            ss: {
+                toClash(n){ return {type:'ss', name:n.name, server:n.server, port:n.port, cipher:n.cipher||'aes-256-gcm', password:n.password, udp:true}; },
+                toSingBox(n){ return {tag:n.name, type:'shadowsocks', server:n.server, server_port:n.port, method:n.cipher||'aes-128-gcm', password:n.password}; },
+                toLink(n){ const userInfo = `${n.cipher}:${n.password}`; const encoded = base64EncodeCS(userInfo); return `ss://${encoded}@${n.server}:${n.port}#${encodeURIComponent(n.name)}`; }
+            },
+            ssr: {
+                toClash(n){
+                    const o = {type:'ssr', name:n.name, server:n.server, port:n.port, cipher:n.cipher, password:n.password, protocol:n.protocol, obfs:n.obfs};
+                    if(n.protocolparam) o.protocolparam = n.protocolparam;
+                    if(n.obfsparam) o.obfsparam = n.obfsparam;
+                    if(n.group) o.group = n.group;
+                    return o;
+                },
+                toSingBox(n){ return {tag:n.name, type:'shadowsocks', server:n.server, server_port:n.port, method:n.cipher||'aes-128-gcm', password:n.password}; },
+                toLink(n){
+                    const cipher = n.cipher==='dummy' ? 'auto' : n.cipher;
+                    const passwordEncoded = btoa(unescape(encodeURIComponent(n.password)));
+                    const plain = `${n.server}:${n.port}:${n.protocol}:${cipher}:${n.obfs}:${passwordEncoded}/`;
+                    let encoded = b64EncodeUrlSafeCS(plain);
+                    const paramsParts = [];
+                    paramsParts.push(`remarks=${b64EncodeUrlSafeCS(n.name)}`);
+                    if(n.group) paramsParts.push(`group=${b64EncodeUrlSafeCS(n.group)}`);
+                    if(n.protocolparam) paramsParts.push(`protoparam=${b64EncodeUrlSafeCS(n.protocolparam)}`);
+                    if(n.obfsparam) paramsParts.push(`obfsparam=${b64EncodeUrlSafeCS(n.obfsparam)}`);
+                    const encodedParams = b64EncodeUrlSafeCS(paramsParts.join('&'));
+                    return `ssr://${encoded}/${encodedParams}`;
+                }
+            },
+            vmess: {
+                toClash(n){
+                    const o = {type:'vmess', name:n.name, server:n.server, port:n.port, uuid:n.uuid, alterId:n.alterId||0, cipher:n.cipher||'auto', network:n.network||'tcp', udp:true};
+                    if(n.tls!==undefined) o.tls = n.tls;
+                    if(n['skip-cert-verify']!==undefined) o['skip-cert-verify'] = n['skip-cert-verify'];
+                    if(n.servername) o.servername = n.servername;
+                    if(n['ws-opts']) o['ws-opts'] = n['ws-opts'];
+                    if(n['grpc-opts']) o['grpc-opts'] = n['grpc-opts'];
+                    return o;
+                },
+                toSingBox(n){
+                    const o = {tag:n.name, type:'vmess', server:n.server, server_port:n.port, uuid:n.uuid, packet_encoding:'xudp', security:n.cipher||'auto', alter_id:0};
+                    if(n.network==='ws') o.transport = {type:'ws'};
+                    if(n.network==='grpc') o.transport = {type:'grpc'};
+                    if(n.tls || n.servername){ o.tls = {enabled:true, ...(n.servername && {server_name:n.servername})}; }
+                    if(n['skip-cert-verify']){ if(!o.tls) o.tls = {enabled:true}; o.tls.insecure = n['skip-cert-verify']; }
+                    return o;
+                },
+                toLink(n){
+                    const obj = {v:'2', ps:n.name, add:n.server, port:String(n.port), id:n.uuid, aid:String(n.alterId||0), scy:n.cipher||'auto', net:n.network||'tcp', tls:n.tls?'tls':''};
+                    const encoded = base64EncodeCS(JSON.stringify(obj));
+                    return `vmess://${encoded}`;
+                }
+            },
+            vless: {
+                toClash(n){
+                    const o = {type:'vless', name:n.name, server:n.server, port:n.port, uuid:n.uuid, network:n.network||'tcp'};
+                    if(n.tls!==undefined) o.tls = n.tls;
+                    if(n.servername) o.servername = n.servername;
+                    if(n['skip-cert-verify']) o['skip-cert-verify'] = n['skip-cert-verify'];
+                    if(n.flow) o.flow = n.flow;
+                    if(n['reality-opts']) o['reality-opts'] = n['reality-opts'];
+                    if(n['client-fingerprint']) o['client-fingerprint'] = n['client-fingerprint'];
+                    if(n['ws-opts']) o['ws-opts'] = n['ws-opts'];
+                    if(n['grpc-opts']) o['grpc-opts'] = n['grpc-opts'];
+                    return o;
+                },
+                toSingBox(n){
+                    const o = {tag:n.name, type:'vless', server:n.server, server_port:n.port, uuid:n.uuid};
+                    if(n.flow) o.flow = n.flow;
+                    if(n.tls || n.servername){ o.tls = {enabled:true, ...(n.servername && {server_name:n.servername})}; }
+                    if(n['reality-opts']){
+                        if(!o.tls) o.tls = {enabled:true};
+                        o.tls.reality = {enabled:true, public_key:n['reality-opts']['public-key']||'', short_id:n['reality-opts']['short-id']||''};
+                    }
+                    if(o.tls){ o.tls.utls = {enabled:true, fingerprint:'chrome'}; }
+                    if(n['skip-cert-verify']){ if(!o.tls) o.tls = {enabled:true}; o.tls.insecure = n['skip-cert-verify']; }
+                    return o;
+                },
+                toLink(n){
+                    let link = `vless://${n.uuid}@${n.server}:${n.port}`;
+                    const params = [];
+                    params.push(`security=${n.tls? 'tls':'none'}`);
+                    params.push(`type=${n.network||'tcp'}`);
+                    params.push('encryption=none');
+                    if(n.flow && n.flow!=='') params.push(`flow=${n.flow}`);
+                    if(n.network==='tcp' || !n.flow || n.flow==='') params.push('headerType=none');
+                    if(n.servername) params.push(`sni=${encodeURIComponent(n.servername)}`);
+                    if(n['skip-cert-verify']) params.push('allowInsecure=1');
+                    if(params.length) link += `?${params.join('&')}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            },
+            trojan: {
+                toClash(n){
+                    const o = {type:'trojan', name:n.name, server:n.server, port:n.port, password:n.password, udp: n.udp ?? true};
+                    if(n['skip-cert-verify']) o['skip-cert-verify'] = n['skip-cert-verify'];
+                    if(n.sni) o.sni = n.sni;
+                    return o;
+                },
+                toSingBox(n){
+                    return {tag:n.name, type:'trojan', server:n.server, server_port:n.port, password:n.password,
+                        tls: {enabled:true, ...(n['skip-cert-verify']!==undefined && {insecure:n['skip-cert-verify']}), ...(n.sni && {server_name:n.sni})}};
+                },
+                toLink(n){
+                    let link = `trojan://${n.password}@${n.server}:${n.port}`;
+                    const params = [];
+                    params.push(`type=${n.network||'tcp'}`);
+                    if(n['skip-cert-verify']){ params.push('security=tls'); params.push('allowInsecure=1'); }
+                    if(n.sni) params.push(`sni=${encodeURIComponent(n.sni)}`);
+                    if(params.length) link += `?${params.join('&')}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            },
+            hysteria: {
+                toClash(n){
+                    return {type:'hysteria', name:n.name, server:n.server, port:n.port, auth_str:n.auth_str||n.auth||'',
+                        protocol:n.protocol||'udp', 'skip-cert-verify':n['skip-cert-verify']||false, sni:n.sni||'',
+                        up:n.up||10, down:n.down||50, alpn:n.alpn || ['h3']};
+                },
+                toSingBox(n){
+                    return {tag:n.name, type:'hysteria', server:n.server, server_port:n.port, auth:n.auth_str||n.auth||'',
+                        up_mbps:n.up||10, down_mbps:n.down||50, ...(n.sni && {server_name:n.sni})};
+                },
+                toLink(n){
+                    let link = `hysteria://${n.server}:${n.port}`;
+                    const params = [];
+                    if(n.protocol) params.push(`protocol=${n.protocol}`);
+                    const authValue = n.auth_str||n.auth;
+                    if(authValue) params.push(`auth=${encodeURIComponent(authValue)}`);
+                    if(n.sni) params.push(`peer=${encodeURIComponent(n.sni)}`);
+                    if(n['skip-cert-verify']) params.push('insecure=1');
+                    if(n.up) params.push(`upmbps=${n.up}`);
+                    if(n.down) params.push(`downmbps=${n.down}`);
+                    if(n.alpn){ const a = Array.isArray(n.alpn)? n.alpn[0]: n.alpn; params.push(`alpn=${encodeURIComponent(a)}`); }
+                    if(params.length) link += `?${params.join('&')}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            },
+            hysteria2: {
+                toClash(n){
+                    const o = {type:'hysteria2', name:n.name, server:n.server, port:n.port, password:n.password};
+                    if(n['skip-cert-verify']) o['skip-cert-verify'] = n['skip-cert-verify'];
+                    if(n.sni) o.sni = n.sni;
+                    if(n.obfs) o.obfs = n.obfs;
+                    if(n['obfs-password']) o['obfs-password'] = n['obfs-password'];
+                    return o;
+                },
+                toSingBox(n){
+                    const o = {tag:n.name, type:'hysteria2', server:n.server, server_port:n.port, password:n.password, tls:{enabled:true}};
+                    if(n.sni) o.tls.server_name = n.sni;
+                    if(n.obfs){ o.obfs = { type: n.obfs, password: n['obfs-password'] || '' }; }
+                    return o;
+                },
+                toLink(n){
+                    let link = `hysteria2://${n.password}@${n.server}:${n.port}`;
+                    const params = [];
+                    if(n.obfs) params.push(`obfs=${encodeURIComponent(n.obfs)}`);
+                    if(n['obfs-password']) params.push(`obfs-password=${encodeURIComponent(n['obfs-password'])}`);
+                    if(n.sni) params.push(`sni=${encodeURIComponent(n.sni)}`);
+                    if(n['skip-cert-verify']) params.push('insecure=1');
+                    if(params.length) link += `/?${params.join('&')}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            },
+            http: {
+                toClash(n){
+                    const o = {type:'http', name:n.name, server:n.server, port:n.port};
+                    if(n.username) o.username = n.username;
+                    if(n.password) o.password = n.password;
+                    if(n.tls) o.tls = n.tls;
+                    return o;
+                },
+                toSingBox(n){
+                    return {tag:n.name, type:'http', server:n.server, server_port:n.port, users:[{username:n.username,password:n.password}]};
+                },
+                toLink(n){
+                    let link = 'http://';
+                    if(n.username && n.password) link += `${encodeURIComponent(n.username)}:${encodeURIComponent(n.password)}@`;
+                    link += `${n.server}:${n.port}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            },
+            socks5: {
+                toClash(n){
+                    const o = {type:'socks5', name:n.name, server:n.server, port:n.port};
+                    if(n.username) o.username = n.username;
+                    if(n.password) o.password = n.password;
+                    return o;
+                },
+                toSingBox(n){
+                    const o = {tag:n.name, type:'socks', server:n.server, server_port:n.port, version:'5'};
+                    if(n.username) o.username = n.username;
+                    if(n.password) o.password = n.password;
+                    return o;
+                },
+                toLink(n){
+                    let link = 'socks5://';
+                    if(n.username && n.password) link += `${encodeURIComponent(n.username)}:${encodeURIComponent(n.password)}@`;
+                    link += `${n.server}:${n.port}`;
+                    link += `#${encodeURIComponent(n.name)}`;
+                    return link;
+                }
+            }
+        };
+
+        function proxiesToLinksCS(proxies){
+            return proxies.map(p=> CS_Adapters[p.type] ? CS_Adapters[p.type].toLink(p) : '').filter(Boolean);
+        }
+
+        const CS_RULESETS = {
+            ir: [
+                '  - DOMAIN-SUFFIX,ir,DIRECT',
+                '  - DOMAIN-KEYWORD,sheypoor,DIRECT',
+                '  - DOMAIN-KEYWORD,divar,DIRECT',
+                '  - DOMAIN-SUFFIX,digikala.com,DIRECT',
+                '  - DOMAIN-SUFFIX,aparat.com,DIRECT',
+                '  - DOMAIN-SUFFIX,irancell.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,mci.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,shaparak.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,sep.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,bmi.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,bpm.bankmellat.ir,DIRECT',
+                '  - DOMAIN-SUFFIX,santander.ir,DIRECT',
+                '  - DOMAIN-KEYWORD,bank,DIRECT',
+                '  - GEOIP,IR,DIRECT,no-resolve',
+                '  - MATCH,🔰 انتخاب پروکسی'
+            ],
+            minimal: [
+                '  - MATCH,🔰 انتخاب پروکسی'
+            ]
+        };
+
+        function buildProxyGroupsCS(proxyNames, ruleMode){
+            const groups = [
+                { name:'🔰 انتخاب پروکسی', type:'select', proxies:['♻️ خودکار','DIRECT', ...proxyNames] },
+                { name:'♻️ خودکار', type:'url-test', url:'http://www.gstatic.com/generate_204', interval:300, tolerance:50, proxies:[...proxyNames] }
+            ];
+            if(ruleMode==='ir'){
+                groups.push({ name:'🇮🇷 سرویس‌های ایرانی', type:'select', proxies:['DIRECT','🔰 انتخاب پروکسی'] });
+            }
+            return groups;
+        }
+
+        function generateClashYamlCS(proxies, ruleMode){
+            if(proxies.length===0) return '# هیچ نودی پیدا نشد\n';
+            const lines = [];
+            lines.push('port: 7890');
+            lines.push('socks-port: 7891');
+            lines.push('allow-lan: true');
+            lines.push('mode: Rule');
+            lines.push('log-level: info');
+            lines.push('external-controller: 0.0.0.0:9090');
+            lines.push('');
+            lines.push('dns:');
+            lines.push('  enabled: true');
+            lines.push('  ipv6: true');
+            lines.push('  default-nameserver:');
+            lines.push('    - 223.5.5.5');
+            lines.push('    - 1.1.1.1');
+            lines.push('  enhanced-mode: fake-ip');
+            lines.push('  fake-ip-range: 198.18.0.1/16');
+            lines.push('  nameserver:');
+            lines.push('    - https://dns.alidns.com/dns-query');
+            lines.push('    - https://1.1.1.1/dns-query');
+            lines.push('');
+            lines.push('proxies:');
+            for(const p of proxies){
+                const adapter = CS_Adapters[p.type];
+                if(adapter){
+                    const clashJson = adapter.toClash(p);
+                    lines.push('  - ' + JSON.stringify(clashJson));
+                }
+            }
+            lines.push('');
+            const uniqueNames = Array.from(new Set(proxies.map(p=>p.name)));
+            const groups = buildProxyGroupsCS(uniqueNames, ruleMode);
+            lines.push('proxy-groups:');
+            for(const g of groups){
+                lines.push(`  - name: ${jsStrCS(g.name)}`);
+                lines.push(`    type: ${g.type}`);
+                if(g.url) lines.push(`    url: ${g.url}`);
+                if(g.interval) lines.push(`    interval: ${g.interval}`);
+                if(g.tolerance) lines.push(`    tolerance: ${g.tolerance}`);
+                lines.push(`    proxies:`);
+                for(const pn of g.proxies) lines.push(`      - ${jsStrCS(pn)}`);
+            }
+            lines.push('');
+            lines.push('rules:');
+            lines.push(...(CS_RULESETS[ruleMode] || CS_RULESETS.minimal));
+            lines.push('');
+            return lines.join('\n');
+        }
+        
+        function jsStrCS(s){
+            if(/^[A-Za-z0-9_.\-]+$/.test(s)) return s;
+            return JSON.stringify(s);
+        }
+
+        function parseClashYamlToProxiesCS(yamlText){
+            if (typeof jsyaml === 'undefined') {
+                console.error("js-yaml is not loaded");
+                return [];
+            }
+            try{
+                const config = jsyaml.load(yamlText);
+                if(!config || typeof config !== 'object' || Array.isArray(config)) return [];
+                const proxies = config.proxies;
+                if(!Array.isArray(proxies)) return [];
+                const valid = [];
+                for(const proxy of proxies){
+                    if(!proxy || typeof proxy !== 'object' || !proxy.type || !proxy.name) continue;
+                    valid.push({...proxy});
+                }
+                return valid;
+            }catch(e){
+                console.error('Clash YAML parse error', e);
+                return [];
+            }
+        }
+
+        const SING_BOX_SUPPORTED = new Set(['ss','ssr','vmess','vless','trojan','hysteria','hysteria2','http','socks5']);
+
+        function generateSingBoxConfigCS(proxies, mode){
+            if(proxies.length===0) return JSON.stringify({error:'هیچ نودی پیدا نشد'}, null, 2);
+
+            const proxyNames = proxies.map(p=>p.name);
+            const proxyOutbounds = proxies.map(p=>{
+                const adapter = CS_Adapters[p.type];
+                return adapter ? adapter.toSingBox(p) : null;
+            }).filter(Boolean);
+
+            const inbounds = [
+                { type:'mixed', tag:'mixed-in', listen:'127.0.0.1', listen_port:2334, sniff:true, sniff_override_destination:true, domain_strategy:'prefer_ipv4', users:[] },
+                { type:'socks', tag:'socks-in', listen:'127.0.0.1', listen_port:2333, sniff:true, sniff_override_destination:true, domain_strategy:'prefer_ipv4', users:[] }
+            ];
+            if(mode==='tun'){
+                inbounds.unshift({
+                    type:'tun', auto_route:true, domain_strategy:'prefer_ipv4', endpoint_independent_nat:true,
+                    address:['172.19.0.1/30','2001:0470:f9da:fdfa::1/64'], mtu:1500,
+                    sniff_override_destination:true, stack:'system', strict_route:true
+                });
+            }
+
+            const config = {
+                dns: {
+                    servers: [
+                        { tag:'remote', address:'1.1.1.1', detour:'انتخاب نود' },
+                        { tag:'local', address:'https://223.5.5.5/dns-query', detour:'direct' },
+                        { tag:'block', address:'rcode://refused' }
+                    ],
+                    rules: [
+                        { outbound:['any'], server:'local' },
+                        { rule_set:['geosite-ir'], server:'local' },
+                        { rule_set:['category-ads-all'], server:'block' }
+                    ],
+                    final:'remote', disable_cache:false, strategy:'ipv4_only'
+                },
+                experimental: {
+                    clash_api: { default_mode:'rule', external_controller:'127.0.0.1:9090', secret:'' },
+                    cache_file: { enabled:true }
+                },
+                inbounds,
+                outbounds: [
+                    { type:'selector', tag:'انتخاب نود', outbounds:['تست خودکار', ...proxyNames] },
+                    { type:'urltest', tag:'تست خودکار', outbounds: proxyNames },
+                    { type:'direct', tag:'direct' },
+                    ...proxyOutbounds
+                ],
+                route: {
+                    auto_detect_interface: true,
+                    rules: [
+                        { action:'sniff' },
+                        { protocol:'dns', action:'hijack-dns' },
+                        { rule_set:['geosite-ir','geoip-ir'], outbound:'direct' },
+                        { ip_is_private:true, outbound:'direct' },
+                        { rule_set:['category-ads-all'], action:'reject' }
+                    ],
+                    rule_set: [
+                        { tag:'geosite-ir', type:'remote', format:'binary', url:'https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-ir.srs', download_detour:'انتخاب نود' },
+                        { tag:'geoip-ir', type:'remote', format:'binary', url:'https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-ir.srs', download_detour:'انتخاب نود' },
+                        { tag:'category-ads-all', type:'remote', format:'binary', url:'https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs', download_detour:'انتخاب نود' }
+                    ]
+                }
+            };
+            return JSON.stringify(config, null, 2);
+        }
+
+        const SING_BOX_TYPE_MAP = {shadowsocks:'ss', vmess:'vmess', vless:'vless', trojan:'trojan', hysteria:'hysteria', hysteria2:'hysteria2', http:'http', socks:'socks5'};
+        const NON_PROXY_TYPES = new Set(['selector','urltest','direct','block','dns']);
+
+        function parseSingBoxToProxiesCS(input){
+            try{
+                const trimmed = input.trim();
+                if(!trimmed) return {proxies:[], unsupported:[]};
+                if(!trimmed.startsWith('{') && !trimmed.startsWith('[')) return {proxies:[], unsupported:[]};
+                const config = JSON.parse(trimmed);
+                const outbounds = Array.isArray(config.outbounds) ? config.outbounds : (config.outbounds? [config.outbounds] : []);
+                const proxies = [];
+                const unsupported = [];
+                for(const ob of outbounds){
+                    if(!ob || !ob.type || NON_PROXY_TYPES.has(ob.type)) continue;
+                    const proxyType = SING_BOX_TYPE_MAP[ob.type];
+                    if(!proxyType){ unsupported.push(ob.type); continue; }
+                    const node = singBoxOutboundToProxyNodeCS(ob, proxyType);
+                    if(node) proxies.push(node);
+                }
+                return {proxies, unsupported};
+            }catch(e){
+                console.error('Sing-box parse error', e);
+                return {proxies:[], unsupported:[]};
+            }
+        }
+
+        function singBoxOutboundToProxyNodeCS(ob, type){
+            const base = { name: ob.tag || ob.name || 'unnamed', type, server: ob.server || '', port: ob.server_port || ob.port || 0 };
+            if(!base.server || base.port===0) return null;
+
+            switch(type){
+                case 'ss':
+                    return {...base, cipher: ob.method || 'aes-128-gcm', password: ob.password || ''};
+                case 'vmess': {
+                    const node = {...base, uuid: ob.uuid||'', alterId: ob.alter_id ?? 0, cipher: ob.security || 'auto', network:'tcp'};
+                    if(ob.transport?.type==='ws') node.network = 'ws';
+                    if(ob.transport?.type==='grpc') node.network = 'grpc';
+                    if(ob.tls){
+                        node.tls = ob.tls.enabled ?? false;
+                        if(ob.tls.server_name) node.servername = ob.tls.server_name;
+                        if(ob.tls.insecure!==undefined) node['skip-cert-verify'] = ob.tls.insecure;
+                    }
+                    return node;
+                }
+                case 'vless': {
+                    const node = {...base, uuid: ob.uuid||'', network:'tcp'};
+                    if(ob.flow) node.flow = ob.flow;
+                    if(ob.tls===true || ob.tls?.enabled){
+                        node.tls = true;
+                        if(ob.tls?.server_name) node.servername = ob.tls.server_name;
+                        else if(ob.tls?.servername) node.servername = ob.tls.servername;
+                        if(ob.tls?.insecure!==undefined) node['skip-cert-verify'] = ob.tls.insecure;
+                        if(ob.tls?.reality?.enabled || ob.reality?.enabled){
+                            const r = ob.tls?.reality || ob.reality;
+                            node['reality-opts'] = {'public-key': r.public_key||'', 'short-id': r.short_id||''};
+                        }
+                    }
+                    return node;
+                }
+                case 'trojan': {
+                    const node = {...base, password: ob.password||'', network:'tcp', tls:true};
+                    if(ob.tls){
+                        if(ob.tls.insecure!==undefined) node['skip-cert-verify'] = ob.tls.insecure;
+                        if(ob.tls.server_name) node.sni = ob.tls.server_name;
+                        else if(ob.tls.servername) node.sni = ob.tls.servername;
+                    }
+                    return node;
+                }
+                case 'hysteria':
+                    return {...base, auth_str: ob.auth || ob.auth_str || '', protocol: ob.protocol || 'udp',
+                        up: parseInt(ob.up_mbps,10) || 10, down: parseInt(ob.down_mbps,10) || 50,
+                        sni: ob.server_name || ob.sni || '', 'skip-cert-verify': ob.tls?.insecure || false};
+                case 'hysteria2': {
+                    const node = {...base, password: ob.password || ''};
+                    if(ob.tls){
+                        if(ob.tls.insecure!==undefined) node['skip-cert-verify'] = ob.tls.insecure;
+                        if(ob.tls.server_name) node.sni = ob.tls.server_name;
+                        else if(ob.tls.servername) node.sni = ob.tls.servername;
+                    }
+                    if(!node.sni && ob.server_name) node.sni = ob.server_name;
+                    if(ob.obfs){
+                        node.obfs = ob.obfs.type || '';
+                        if(ob.obfs.password) node['obfs-password'] = ob.obfs.password;
+                    }
+                    return node;
+                }
+                case 'http': case 'socks5': {
+                    const users = ob.users || [];
+                    const user = users[0] || {};
+                    return {...base, username: user.username || '', password: user.password || ''};
+                }
+                default: return null;
+            }
+        }
+
+        function detectFormatCS(input){
+            const t = input.trim();
+            if(!t) return 'links';
+            if(t.startsWith('{') || t.startsWith('[')){
+                try{ JSON.parse(t); return 'singbox'; }catch(e){}
+            }
+            if(/^\s*(proxies\s*:|port\s*:|mixed-port\s*:)/m.test(t) || /^\s*-\s*\{.*"type"/.test(t)){
+                return 'clash';
+            }
+            if(t.includes('proxies:')) return 'clash';
+            return 'links';
+        }
+
+        function parseByFormatCS(input, format){
+            if(format==='auto') format = detectFormatCS(input);
+            if(format==='links'){
+                const {proxies, unsupported} = parseMultipleProxiesCS(input);
+                return {proxies, unsupported};
+            }
+            if(format==='clash'){
+                return {proxies: parseClashYamlToProxiesCS(input), unsupported:[]};
+            }
+            if(format==='singbox'){
+                return parseSingBoxToProxiesCS(input);
+            }
+            return {proxies:[], unsupported:[]};
+        }
+
+        function generateByFormatCS(proxies, format, ruleMode, sbMode){
+            if(format==='clash'){
+                return generateClashYamlCS(proxies, ruleMode);
+            }
+            if(format==='singbox'){
+                const supported = proxies.filter(p=>SING_BOX_SUPPORTED.has(p.type) && p.type!=='ssr');
+                return generateSingBoxConfigCS(supported, sbMode);
+            }
+            if(format==='links'){
+                return proxiesToLinksCS(proxies).join('\n');
+            }
+            return '';
+        }
+
+        function runCSConversion() {
+            const inputArea = document.getElementById('csInputArea');
+            const outputArea = document.getElementById('csOutputArea');
+            const inputFormatSel = document.getElementById('csInputFormat');
+            const outputFormatSel = document.getElementById('csOutputFormat');
+            const inputCountEl = document.getElementById('csInputCount');
+            const outputCountEl = document.getElementById('csOutputCount');
+            const statusStrip = document.getElementById('csStatusStrip');
+
+            const ruleModeElem = document.querySelector('input[name="cs_rule_mode"]:checked');
+            const sbModeElem = document.querySelector('input[name="cs_sb_mode"]:checked');
+            
+            const ruleMode = ruleModeElem ? ruleModeElem.value : 'ir';
+            const sbMode = sbModeElem ? sbModeElem.value : 'tun';
+
+            const input = inputArea.value;
+            const inFmt = inputFormatSel.value;
+            const outFmt = outputFormatSel.value;
+
+            if(!input.trim()){
+                outputArea.value = '';
+                inputCountEl.textContent = '0';
+                outputCountEl.textContent = '0';
+                statusStrip.innerHTML = '';
+                return;
+            }
+
+            const {proxies, unsupported} = parseByFormatCS(input, inFmt);
+            inputCountEl.textContent = proxies.length;
+
+            if(proxies.length===0){
+                outputArea.value = '';
+                outputCountEl.textContent = '0';
+                statusStrip.innerHTML = `<span class="status-err">⚠ هیچ نود معتبری شناسایی نشد. فرمت ورودی را بررسی کنید.</span>`;
+                return;
+            }
+
+            let outputProxies = proxies;
+            let droppedForOutput = 0;
+            if(outFmt==='singbox'){
+                const before = outputProxies.length;
+                outputProxies = outputProxies.filter(p=>SING_BOX_SUPPORTED.has(p.type) && p.type!=='ssr');
+                droppedForOutput = before - outputProxies.length;
+            }
+
+            const output = generateByFormatCS(proxies, outFmt, ruleMode, sbMode);
+            outputArea.value = output;
+            outputCountEl.textContent = outputProxies.length;
+
+            const statusParts = [];
+            statusParts.push(`<span class="status-ok">✓ ${proxies.length} نود پردازش شد</span>`);
+            if(unsupported.length){
+                statusParts.push(`<span class="status-warn">⚠ پروتکل‌های ناشناخته: ${unsupported.join(', ')}</span>`);
+            }
+            if(droppedForOutput>0){
+                statusParts.push(`<span class="status-warn">⚠ ${droppedForOutput} نود به‌دلیل عدم سازگاری حذف شد (مانند SSR در Sing-box)</span>`);
+            }
+            statusStrip.innerHTML = statusParts.join('');
+        }
+
+        function readDroppedCsFiles(files) {
+            let combined = '';
             let loaded = 0;
-            let combinedText = "";
-            Array.from(files).forEach(file => {
+            files.forEach(file => {
                 const reader = new FileReader();
-                reader.onload = function() {
-                    combinedText += String(reader.result).trim() + "\n\n";
+                reader.onload = () => {
+                    combined += String(reader.result).trim() + '\n\n';
                     loaded++;
                     if (loaded === files.length) {
-                        document.getElementById('proton_confInput').value = combinedText.trim();
-                        convertProton(); 
+                        document.getElementById('csInputArea').value = combined.trim();
+                        runCSConversion();
                     }
                 };
                 reader.readAsText(file);
             });
-            updateProtonFileLabel();
+        }
+
+        // --- Event Listeners for Clash / Sing-box ---
+        document.getElementById('csInputArea').addEventListener('input', runCSConversion);
+        document.getElementById('csInputFormat').addEventListener('change', runCSConversion);
+        document.getElementById('csOutputFormat').addEventListener('change', runCSConversion);
+        
+        document.querySelectorAll('input[name="cs_rule_mode"]').forEach(r => r.addEventListener('change', runCSConversion));
+        document.querySelectorAll('input[name="cs_sb_mode"]').forEach(r => r.addEventListener('change', runCSConversion));
+
+        document.getElementById('csClearBtn').addEventListener('click', () => {
+            document.getElementById('csInputArea').value = '';
+            document.getElementById('csFiles').value = '';
+            runCSConversion();
         });
 
-        function updateProtonFileLabel() {
-            const fileInput = document.getElementById('proton_wgFiles');
-            const labelText = document.getElementById('proton_fileList');
-            const count = fileInput.files ? fileInput.files.length : 0;
-            if (count === 0) {
-                labelText.innerText = i18n[currentLang].no_files;
-            } else {
-                labelText.innerText = i18n[currentLang].files_selected.replace('{count}', count);
-            }
-        }
+        document.getElementById('csPasteBtn').addEventListener('click', pasteFromClipboard);
 
-        function handleClearProton() {
-            document.getElementById('proton_confInput').value = "";
-            document.getElementById('proton_wgFiles').value = "";
-            document.getElementById('proton_yamlOutput').value = "";
-            document.getElementById('proton_downloadBtn').classList.add('hidden');
-            document.getElementById('proton_copyBtn').classList.add('hidden');
-            protonProxyList = [];
-            updateProtonFileLabel();
-        }
-
-        function generateProtonAmneziaDefaults() {
-            const selectedOption = document.querySelector('input[name="proton_junk"]:checked')?.id;
-            let jc, jmin, jmax;
-            switch(selectedOption) {
-                case 'proton_junk1':
-                    jc = 3; jmin = 1; jmax = 3;
-                    break;
-                case 'proton_junk2':
-                    jc = 30; jmin = 10; jmax = 30;
-                    break;
-                case 'proton_junk3':
-                    jc = parseInt(document.getElementById('proton_jc1').value) || 128;
-                    jmin = parseInt(document.getElementById('proton_jmin1').value) || 1279;
-                    jmax = parseInt(document.getElementById('proton_jmax1').value) || 1280;
-                    break;
-                default:
-                    jc = 128; jmin = 1279; jmax = 1280;
-            }
-            if (jmax <= jmin) jmax = jmin + 1;
-            return { jc, jmin, jmax, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4 };
-        }
-
-        function convertToProtonClashProxy(wgConfig, fileName) {
-            const { interface: interfaceData, peers } = wgConfig;
-            const peerData = peers[0];
-            const dnsList = interfaceData.dns ? interfaceData.dns.split(',').map(d => d.trim()) : [];
-            const defaultAmnezia = generateProtonAmneziaDefaults();
-
-            let proxyName = peerData.name || fileName.replace('.conf', '');
-            let originalName = proxyName;
-            
-            if (!proxyName) {
-                proxyName = `Proton_${Math.random().toString(36).substr(2, 5)}`;
-            } else {
-                proxyName = proxyName.replace(/FREE#?/g, '').replace(/-$/, '');
-                const flagMatch = proxyName.match(/^([A-Z]{2})[-_]/);
-                if (flagMatch && COUNTRY_FLAGS[flagMatch[1]]) {
-                    proxyName = proxyName.replace(flagMatch[1], COUNTRY_FLAGS[flagMatch[1]]);
-                }
-            }
-
-            const addresses = interfaceData.address.split(',').map(addr => addr.trim());
-            let ipv4 = '', ipv6 = '';
-            addresses.forEach(addr => {
-                if (addr.includes(':')) ipv6 = addr;
-                else ipv4 = addr;
+        document.getElementById('csCopyBtn').addEventListener('click', () => {
+            const outArea = document.getElementById('csOutputArea');
+            if(!outArea.value) { showToast(currentLang === 'fa' ? 'چیزی برای کپی نیست' : 'Nothing to copy'); return; }
+            navigator.clipboard.writeText(outArea.value).then(() => {
+                showToast(i18n[currentLang].copied);
             });
+        });
 
-            const amneziaOptions = {};
-            for (const key of ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']) {
-                amneziaOptions[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key] || defaultAmnezia[key];
-            }
+        document.getElementById('csDownloadBtn').addEventListener('click', () => {
+            const outArea = document.getElementById('csOutputArea');
+            if(!outArea.value) { showToast(currentLang === 'fa' ? 'چیزی برای دانلود نیست' : 'Nothing to download'); return; }
+            const fmt = document.getElementById('csOutputFormat').value;
+            const ext = fmt==='clash' ? 'yaml' : (fmt==='singbox' ? 'json' : 'txt');
+            const mime = fmt==='singbox' ? 'application/json' : 'text/plain';
+            const blob = new Blob([outArea.value], {type: mime + ';charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `config.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(currentLang === 'fa' ? 'دانلود انجام شد' : 'Download complete');
+        });
 
-            return {
-                name: proxyName, originalName, type: "wireguard",
-                server: peerData.endpoint.split(':')[0], port: parseInt(peerData.endpoint.split(':')[1]),
-                ip: interfaceData.address, ipv4, ipv6,
-                private_key: interfaceData.privatekey, public_key: peerData.publickey,
-                preshared_key: peerData.presharedKey, allowed_ips: peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`),
-                udp: true, mtu: 1420, remote_dns_resolve: true, dns: dnsList,
-                'amnezia-wg-option': amneziaOptions
-            };
-        }
+        document.getElementById('csSwapBtn').addEventListener('click', () => {
+            const inFormat = document.getElementById('csInputFormat');
+            const outFormat = document.getElementById('csOutputFormat');
+            const inArea = document.getElementById('csInputArea');
+            const outArea = document.getElementById('csOutputArea');
 
-        function generateProtonAmneziaOptionsYAML(options) {
-            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
-            const awg15Enabled = document.getElementById('proton_awg15').checked;
-            let yaml = '  amnezia-wg-option:\n';
-            if (!nojunkEnabled) {
-                for (const [key, value] of Object.entries(options)) {
-                    yaml += `    ${key}: ${value}\n`;
-                }
-            }
-            if (awg15Enabled) {
-                const i1 = document.getElementById('proton_i1').value.trim() || '';
-                const i2 = document.getElementById('proton_i2').value.trim();
-                const i3 = document.getElementById('proton_i3').value.trim();
-                const i4 = document.getElementById('proton_i4').value.trim();
-                const i5 = document.getElementById('proton_i5').value.trim();
-                if (i1) yaml += `    i1: ${i1}\n`;
-                if (i2) yaml += `    i2: ${i2}\n`;
-                if (i3) yaml += `    i3: ${i3}\n`;
-                if (i4) yaml += `    i4: ${i4}\n`;
-                if (i5) yaml += `    i5: ${i5}\n`;
-            }
-            return yaml;
-        }
+            const inVal = inFormat.value;
+            const outVal = outFormat.value;
+            const effectiveIn = inVal==='auto' ? detectFormatCS(inArea.value) : inVal;
 
-        function generateProtonProxyGroups(proxies) {
-            const groups = [];
-            const protonProxies = [];
-            const otherProxies = [];
+            const newInputText = outArea.value;
+            inFormat.value = ['links','clash','singbox'].includes(outVal) ? outVal : 'auto';
+            outFormat.value = effectiveIn;
 
-            proxies.forEach(proxy => {
-                const isProton = /(^|[_-])([A-Z]{2})([-_]FREE)?([#_-]|$)/i.test(proxy.originalName || proxy.name);
-                if (isProton) protonProxies.push(proxy.name);
-                else otherProxies.push(proxy.name);
-            });
+            inArea.value = newInputText;
+            runCSConversion();
+        });
 
-            if (protonProxies.length > 0) {
-                groups.push(`\n- name: Proton\n  type: select\n  proxies:\n    - ${protonProxies.join('\n    - ')}`);
-            }
-            if (otherProxies.length > 0) {
-                groups.push(`\n- name: Other\n  type: select\n  proxies:\n    - ${otherProxies.join('\n    - ')}`);
-            }
-            return groups.join('\n');
-        }
-
-        function convertProton() {
-            const textInput = document.getElementById('proton_confInput').value.trim();
-            if (!textInput) return;
-
-            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
-            protonProxyList = [];
-
-            try {
-                const wgConfigs = parseMultipleWGConfigs(textInput);
-                wgConfigs.forEach((wgConfig, idx) => {
-                    const proxy = convertToProtonClashProxy(wgConfig, `proton_config_${idx + 1}.conf`);
-                    protonProxyList.push(proxy);
-                });
-
-                if (selectedOption === 'proton_clash_radio') {
-                    generateProtonClashYaml();
-                } else {
-                    generateProtonAWGYaml();
-                }
-            } catch (error) {
-                showToast(error.message);
-            }
-        }
-
-        // --- Proton Clash Configuration Exporter ---
-        function generateProtonClashYaml() {
-            if (protonProxyList.length === 0) return;
-            const yamlProxies = protonProxyList.map(proxy => {
-                let yaml = `- name: ${proxy.name}\n`;
-                yaml += `  type: ${proxy.type}\n`;
-                yaml += `  server: ${proxy.server}\n`;
-                yaml += `  port: ${proxy.port}\n`;
-                yaml += `  ip: ${proxy.ipv4}\n`;
-                if (proxy.ipv6) yaml += `  ipv6: ${proxy.ipv6}\n`;
-                yaml += `  private-key: ${proxy.private_key}\n`;
-                yaml += `  public-key: ${proxy.public_key}\n`;
-                yaml += `  allowed-ips: [${proxy.allowed_ips.join(', ')}]\n`;
-                if (proxy.preshared_key) yaml += `  pre-shared-key: ${proxy.preshared_key}\n`;
-                yaml += `  udp: ${proxy.udp}\n`;
-                yaml += `  mtu: ${proxy.mtu}\n`;
-                yaml += `  remote-dns-resolve: ${proxy.remote_dns_resolve}\n`;
-                yaml += `  dns: [${proxy.dns.join(', ')}]\n`;
-                yaml += generateProtonAmneziaOptionsYAML(proxy['amnezia-wg-option'] || {});
-                return yaml;
-            }).join('\n');
-
-            const proxyGroups = generateProtonProxyGroups(protonProxyList);
-            const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${proxyGroups}`;
-            displayProtonOutput(fullYaml, 'proton-clash.yaml');
-        }
-
-        function generateSingleProtonAWGConfig(proxy) {
-            const amneziaOptions = proxy['amnezia-wg-option'] || {};
-            const awg15Enabled = document.getElementById('proton_awg15').checked;
-            const nojunkEnabled = document.getElementById('proton_nojunk').checked;
-            const nolanEnabled = document.getElementById('proton_nolan').checked;
-            const selectedOption = document.querySelector('input[name="proton_option"]:checked').id;
-
-            let awgConfig = proxy.originalName ? `# ${proxy.originalName}\n` : `# Proton Config\n`;
-            awgConfig += `[Interface]\nPrivateKey = ${proxy.private_key}\nAddress = ${proxy.ip}\n`;
-            if (proxy.dns && proxy.dns.length > 0) awgConfig += `DNS = ${proxy.dns.join(', ')}\n`;
-            awgConfig += `MTU = ${proxy.mtu}\n`;
-
-            if (!nojunkEnabled) {
-                awgConfig += `S1 = 0\nS2 = 0\n`;
-                awgConfig += `Jc = ${amneziaOptions.jc}\n`;
-                awgConfig += `Jmin = ${amneziaOptions.jmin}\n`;
-                awgConfig += `Jmax = ${amneziaOptions.jmax}\n`;
-                awgConfig += `H1 = ${amneziaOptions.h1}\n`;
-                awgConfig += `H2 = ${amneziaOptions.h2}\n`;
-                awgConfig += `H3 = ${amneziaOptions.h3}\n`;
-                awgConfig += `H4 = ${amneziaOptions.h4}\n`;
-            }
-
-            if (awg15Enabled) {
-                if (selectedOption === 'proton_awg_radio') {
-                    const i1 = document.getElementById('proton_i1').value.trim() || '';
-                    const i2 = document.getElementById('proton_i2').value.trim();
-                    const i3 = document.getElementById('proton_i3').value.trim();
-                    const i4 = document.getElementById('proton_i4').value.trim();
-                    const i5 = document.getElementById('proton_i5').value.trim();
-                    if (i1) awgConfig += `I1 = ${i1}\n`;
-                    if (i2) awgConfig += `I2 = ${i2}\n`;
-                    if (i3) awgConfig += `I3 = ${i3}\n`;
-                    if (i4) awgConfig += `I4 = ${i4}\n`;
-                    if (i5) awgConfig += `I5 = ${i5}\n`;
-                } else if (selectedOption === 'proton_karing_radio') {
-                    const idVal = document.getElementById('proton_id').value.trim() || 'ozon.ru';
-                    const ipVal = document.getElementById('proton_ip').value || 'quic';
-                    const ibVal = document.getElementById('proton_ib').value || 'curl';
-                    awgConfig += `Id = ${idVal}\nIp = ${ipVal}\nIb = ${ibVal}\n`;
-                }
-            }
-
-            awgConfig += `\n[Peer]\nPublicKey = ${proxy.public_key}\n`;
-            if (proxy.preshared_key) awgConfig += `PresharedKey = ${proxy.preshared_key}\n`;
-
-            if (nolanEnabled && selectedOption !== 'proton_clash_radio') {
-                awgConfig += `AllowedIPs = 1.0.0.0/8, 2.0.0.0/7, 4.0.0.0/6, 8.0.0.0/7, 11.0.0.0/8, 12.0.0.0/6, 16.0.0.0/4, 32.0.0.0/3, 64.0.0.0/3, 96.0.0.0/4, 112.0.0.0/5, 120.0.0.0/6, 124.0.0.0/7, 126.0.0.0/8, 128.0.0.0/3, 160.0.0.0/5, 168.0.0.0/8, 169.0.0.0/9, 169.128.0.0/10, 169.192.0.0/11, 169.224.0.0/12, 169.240.0.0/13, 169.248.0.0/14, 169.252.0.0/15, 169.255.0.0/16, 170.0.0.0/7, 172.0.0.0/12, 172.32.0.0/11, 172.64.0.0/10, 172.128.0.0/9, 173.0.0.0/8, 174.0.0.0/7, 176.0.0.0/4, 192.0.0.0/9, 192.128.0.0/11, 192.160.0.0/13, 192.169.0.0/16, 192.170.0.0/15, 192.172.0.0/14, 192.176.0.0/12, 192.192.0.0/10, 193.0.0.0/8, 194.0.0.0/7, 196.0.0.0/6, 200.0.0.0/5, 208.0.0.0/4, 224.0.0.0/4, ::/1, 8000::/2, c000::/3, e000::/4, f000::/5, f800::/6, fe00::/9, fec0::/10, ff00::/8\n`;
-            } else {
-                awgConfig += `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}\n`;
-            }
-            awgConfig += `Endpoint = ${proxy.server}:${proxy.port}\n`;
-            return awgConfig;
-        }
-
-        function generateProtonAWGYaml() {
-            if (protonProxyList.length === 0) return;
-            const awgConfigs = protonProxyList.map(proxy => generateSingleProtonAWGConfig(proxy));
-            const finalOutput = awgConfigs.join('\n\n');
-            displayProtonOutput(finalOutput, 'proton-amnezia.conf');
-        }
-
-        function displayProtonOutput(content, defaultFileName) {
-            document.getElementById('proton_yamlOutput').value = content;
-            const dlBtn = document.getElementById('proton_downloadBtn');
-            const cpBtn = document.getElementById('proton_copyBtn');
-            dlBtn.classList.remove('hidden');
-            cpBtn.classList.remove('hidden');
-
-            dlBtn.onclick = () => {
-                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = defaultFileName;
-                a.click();
-            };
-
-            cpBtn.onclick = () => {
-                navigator.clipboard.writeText(content).then(() => {
-                    showToast(i18n[currentLang].copied);
-                });
-            };
-        }
+        document.getElementById('csFiles').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).filter(f => 
+                f.name.endsWith('.txt') || f.name.endsWith('.yaml') || f.name.endsWith('.yml') || f.name.endsWith('.json')
+            );
+            if (!files.length) return;
+            readDroppedCsFiles(files);
+        });
 
         updateLanguage();
     </script>

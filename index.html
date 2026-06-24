@@ -672,6 +672,109 @@
             outline-offset: -2px;
             background-color: rgba(16, 132, 208, 0.12);
         }
+
+        /* --- WireGuard: Validation Panel --- */
+        .validation-panel {
+            margin-top: 8px;
+            padding: 6px;
+            background: var(--win-window-bg);
+            border: 1px inset #fff;
+            max-height: 130px;
+            overflow-y: auto;
+        }
+        .validation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 3px 2px;
+            border-bottom: 1px dotted var(--win-shadow);
+            line-height: 1.4;
+        }
+        .validation-item:last-child { border-bottom: none; }
+        .validation-icon { font-weight: bold; flex-shrink: 0; }
+        .validation-item.error .validation-icon, .validation-item.error .validation-text { color: red; }
+        .validation-item.warning .validation-icon, .validation-item.warning .validation-text { color: #b85c00; }
+        body.light-theme .validation-item.error .validation-icon, body.light-theme .validation-item.error .validation-text { color: #ff0000; }
+        body.light-theme .validation-item.warning .validation-icon, body.light-theme .validation-item.warning .validation-text { color: #ffff00; }
+
+        /* --- WireGuard: Amnezia 1.5 preset buttons --- */
+        .amnezia15-presets {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin: 6px 0;
+        }
+        .amnezia15-presets .win98-btn {
+            padding: 3px 8px;
+            font-size: 11px;
+        }
+        .amnezia15-presets .win98-btn.active {
+            border-top: 1.5px solid var(--win-dark-shadow);
+            border-left: 1.5px solid var(--win-dark-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            box-shadow: none;
+            font-weight: bold;
+        }
+        .amnezia15-doc {
+            display: block;
+            font-size: 10px;
+            color: var(--win-text-disabled);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        /* --- WireGuard: Multi-config Tabs UI --- */
+        #wgConfigTabsContainer { margin-top: 10px; }
+        #wgConfigTabsHeader {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            border-bottom: 1.5px solid var(--win-shadow);
+            margin-bottom: 8px;
+            padding-right: 2px;
+        }
+        html[dir="rtl"] #wgConfigTabsHeader { flex-direction: row-reverse; }
+        .wg-config-tab-pane { display: none; }
+        .wg-config-tab-pane.active { display: block; }
+        .wg-config-tab-pane textarea {
+            height: 130px;
+            margin-bottom: 6px;
+        }
+        .wg-tab-pane-actions {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .wg-tab-pane-actions .win98-btn { flex: 1; }
+        .wg-bulk-actions-header {
+            font-weight: bold;
+            margin: 10px 0 4px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--win-shadow);
+        }
+        .wg-bulk-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .wg-bulk-actions .win98-btn { flex: 1; }
+
+        #wgQrTabsBar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+        #wgQrTabsBar .win98-btn.active {
+            border-top: 1.5px solid var(--win-dark-shadow);
+            border-left: 1.5px solid var(--win-dark-shadow);
+            border-right: 1.5px solid var(--win-highlight);
+            border-bottom: 1.5px solid var(--win-highlight);
+            box-shadow: none;
+            font-weight: bold;
+        }
         
         .cs-status-strip {
             margin-top: 10px;
@@ -796,13 +899,15 @@
                     <div>
                         <div class="group-box" style="height: calc(100% - 10px);">
                             <span class="group-box-title" data-i18n="section_configuration">پیکربندی فایل ورودی</span>
-                            
+
                             <label for="wgFiles" class="win98-btn custom-file-upload wg-drop-zone" id="wgUploadLabel">
-                                <span data-i18n="select_files">انتخاب فایل‌های .conf</span>
+                                <span class="upload-text" data-i18n="select_files">انتخاب فایل‌های .conf</span>
                             </label>
                             <input type="file" id="wgFiles" accept=".conf" multiple style="display:none;">
 
                             <textarea id="confInput" class="win98-input wg-drop-zone" style="height: 150px; margin-bottom: 10px;" placeholder="یا محتوای فایل .conf خود را در اینجا جایگذاری کنید..." data-i18n-placeholder="input_placeholder"></textarea>
+
+                            <div id="wgValidationPanel" class="validation-panel hidden"></div>
 
                             <div class="action-btns" style="display:flex; gap:8px;">
                                 <button onclick="convertWireguard()" class="win98-btn" style="flex:1; font-weight:bold;">
@@ -836,13 +941,36 @@
 
                         <div class="group-box" id="musor1">
                             <span class="group-box-title" data-i18n="junk_packet_settings">تنظیمات پکت‌های هرز (Junk Packets)</span>
-                            
+
                             <label class="win98-checkbox" id="amnezia15-toggle-label" style="margin-bottom:8px;">
                                 <input type="checkbox" id="enableAmnezia15" onchange="toggleAmnezia15()">
                                 <span data-i18n="enable_15">فعال‌سازی نسخه آمونیا ۱.۵ (Amnezia 1.5)</span>
                             </label>
 
-                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+                            <div id="amnezia15-inputs" class="hidden" style="padding: 8px; border: 1px inset #fff; margin-bottom:8px;">
+                                <span style="font-weight:bold; display:block; margin-bottom:4px;" data-i18n="amnezia_params">پارامترهای آمونیا ۱.۵</span>
+                                <small class="amnezia15-doc">
+                                    <span data-i18n="amnezia15_note_prefix"></span>
+                                    <a target="_blank" href="https://docs.amnezia.org/documentation/instructions/new-amneziawg-selfhosted/" data-i18n="amnezia15_official_docs"></a>
+                                    <span data-i18n="amnezia15_note_suffix"></span>
+                                </small>
+                                <div class="amnezia15-presets">
+                                    <button type="button" class="win98-btn" id="preset-set1" onclick="applyAmnezia15Preset('set1')">Set1</button>
+                                    <button type="button" class="win98-btn" id="preset-set2" onclick="applyAmnezia15Preset('set2')">Set2</button>
+                                    <button type="button" class="win98-btn" id="preset-set3" onclick="applyAmnezia15Preset('set3')">Set3</button>
+                                    <button type="button" class="win98-btn" id="preset-custom" onclick="applyAmnezia15Preset('custom')" data-i18n="custom_settings">سفارشی</button>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <div>I1: <input type="text" id="i1_1" placeholder="I1" style="width:100%;"></div>
+                                    <div>I2: <input type="text" id="i2_1" placeholder="I2" style="width:100%;"></div>
+                                    <div>I3: <input type="text" id="i3_1" placeholder="I3" style="width:100%;"></div>
+                                    <div>I4: <input type="text" id="i4_1" placeholder="I4" style="width:100%;"></div>
+                                    <div>I5: <input type="text" id="i5_1" placeholder="I5" style="width:100%;"></div>
+                                </div>
+                                <button class="win98-btn" id="resetAmnezia15Btn" style="width:100%; margin-top:6px;" data-i18n="reset_i1_i5">ریست I1–I5</button>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;" id="standard-junk-radios">
                                 <label class="win98-radio">
                                     <input type="radio" id="junk1" name="junk" checked>
                                     <span data-i18n="light_option">سبک (jc=3, jmin=1, jmax=3)</span>
@@ -852,29 +980,25 @@
                                     <span data-i18n="heavy_option">سنگین (jc=5, jmin=10, jmax=40)</span>
                                 </label>
                                 <label class="win98-radio">
-                                    <input type="radio" id="junk3" name="junk" onchange="handleJunkRadioChange()">
+                                    <input type="radio" id="junk3" name="junk">
                                     <span data-i18n="custom_settings">تنظیمات سفارشی</span>
                                 </label>
                             </div>
 
                             <div id="standard-junk-inputs" style="padding: 8px; border: 1px inset #fff; margin-bottom: 8px;">
                                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                                    <div>jc: <input type="text" id="jc1" placeholder="3" style="width:40px;"></div>
-                                    <div>jmin: <input type="text" id="jmin1" placeholder="1" style="width:40px;"></div>
-                                    <div>jmax: <input type="text" id="jmax1" placeholder="3" style="width:40px;"></div>
+                                    <div>jc: <input type="text" id="jc1" placeholder="128" style="width:40px;"></div>
+                                    <div>jmin: <input type="text" id="jmin1" placeholder="1279" style="width:40px;"></div>
+                                    <div>jmax: <input type="text" id="jmax1" placeholder="1280" style="width:40px;"></div>
                                 </div>
-                                <button class="win98-btn" id="randomJunkBtn" onclick="handleRandomJunk()" style="width:100%;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
-                            </div>
-
-                            <div id="amnezia15-inputs" class="hidden" style="padding: 8px; border: 1px inset #fff;">
-                                <span style="font-weight:bold; display:block; margin-bottom:4px;" data-i18n="amnezia_params">پارامترهای آمونیا ۱.۵</span>
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
-                                    <div>I1: <input type="text" id="i1_1" style="width:50px;"></div>
-                                    <div>I2: <input type="text" id="i2_1" style="width:50px;"></div>
-                                    <div>I3: <input type="text" id="i3_1" style="width:50px;"></div>
-                                    <div>I4: <input type="text" id="i4_1" style="width:50px;"></div>
-                                    <div>I5: <input type="text" id="i5_1" style="width:50px;"></div>
+                                <div style="display:flex; gap:6px; margin-bottom:8px;">
+                                    <button class="win98-btn" id="randomJunkBtn" onclick="handleRandomJunk()" style="flex:1;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
+                                    <button class="win98-btn" id="resetJunkBtn" style="flex:1;" data-i18n="reset_defaults">پیش‌فرض</button>
                                 </div>
+                                <label class="win98-checkbox" style="display:flex;">
+                                    <input type="checkbox" id="randomizePerConfig">
+                                    <span data-i18n="randomizePerConfig">تصادفی‌سازی برای هر کانفیگ</span>
+                                </label>
                             </div>
                         </div>
 
@@ -897,11 +1021,11 @@
 
                             <div style="padding: 8px; border: 1px inset #fff; margin-bottom:8px;">
                                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                                    <div>jc: <input type="text" id="ws_jc1" style="width:40px;"></div>
-                                    <div>jmin: <input type="text" id="ws_jmin1" style="width:40px;"></div>
-                                    <div>jmax: <input type="text" id="ws_jmax1" style="width:40px;"></div>
+                                    <div>jc: <input type="text" id="ws_jc1" placeholder="128" style="width:40px;"></div>
+                                    <div>jmin: <input type="text" id="ws_jmin1" placeholder="1279" style="width:40px;"></div>
+                                    <div>jmax: <input type="text" id="ws_jmax1" placeholder="1280" style="width:40px;"></div>
                                 </div>
-                                <button class="win98-btn" onclick="handleRandomWiresocket()" style="width:100%;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
+                                <button class="win98-btn" id="randomWiresockBtn" onclick="handleRandomWiresocket()" style="width:100%;" data-i18n="generate_random">تولید مقادیر تصادفی</button>
                             </div>
 
                             <div style="padding: 8px; border: 1px inset #fff;">
@@ -931,21 +1055,35 @@
 
                 <div class="group-box" style="margin-top:10px;">
                     <span class="group-box-title" data-i18n="converted_results">نتایج تبدیل</span>
-                    <textarea id="yamlOutput" class="win98-input" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
-                    
-                    <div class="button-container" style="display:flex; gap:8px;">
-                        <button class="win98-btn hidden" id="downloadBtn" style="flex:1;">
+
+                    <!-- Multi-config tabs UI (shown when >1 config converted) -->
+                    <div id="wgConfigTabsContainer" class="hidden">
+                        <div id="wgConfigTabsHeader" class="win98-tabs"></div>
+                        <div id="wgConfigTabsBody"></div>
+                        <div class="wg-bulk-actions-header" data-i18n="bulk_actions">عملیات گروهی</div>
+                        <div class="wg-bulk-actions">
+                            <button class="win98-btn hidden" id="downloadZipBtn"><span data-i18n="download_zip">دانلود ZIP</span></button>
+                            <button class="win98-btn hidden" id="downloadBtn"><span data-i18n="download">دانلود کانفیگ</span></button>
+                            <button class="win98-btn hidden" id="copyBtn"><span data-i18n="copy">کپی خروجی</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Legacy single-output textarea (shown when only 1 config) -->
+                    <textarea id="yamlOutput" class="win98-input hidden" style="height:150px; margin-bottom:10px;" placeholder="کانفیگ تبدیل شده در اینجا نمایش داده خواهد شد..." data-i18n-placeholder="converted_placeholder" readonly></textarea>
+                    <div class="button-container hidden" id="wgLegacyBtnContainer" style="display:flex; gap:8px;">
+                        <button class="win98-btn hidden" id="downloadBtnLegacy" style="flex:1;">
                             <span data-i18n="download">دانلود کانفیگ</span>
                         </button>
-                        <button class="win98-btn hidden" id="copyBtn" style="flex:1;">
+                        <button class="win98-btn hidden" id="copyBtnLegacy" style="flex:1;">
                             <span data-i18n="copy">کپی خروجی</span>
                         </button>
-                        <button class="win98-btn hidden" id="wgQrBtn" style="flex:1;" onclick="openWgQrModal()">
+                        <button class="win98-btn hidden" id="wgQrBtnLegacy" style="flex:1;">
                             <span data-i18n="show_qr">نمایش QR</span>
                         </button>
                     </div>
                 </div>
             </div>
+
 
             <!-- Clash / Sing-box View -->
             <div id="clashSingboxView" class="hidden">
@@ -1158,6 +1296,27 @@
         </div>
     </div>
 
+    <div id="wgQrModal">
+        <div class="container" style="max-width: 320px; background: var(--win-face);">
+            <div class="title-bar">
+                <div class="title-bar-text" data-i18n="qr_modal_title">QR کانفیگ</div>
+                <div class="title-bar-controls">
+                    <button onclick="closeWgQrModal()">✕</button>
+                </div>
+            </div>
+            <div class="window-body" style="text-align:center;">
+                <div id="wgQrTabsBar" class="hidden"></div>
+                <div id="wgQrCanvasContainer">
+                    <canvas id="wgQrCanvas" width="256" height="256"></canvas>
+                </div>
+                <p id="wgQrNote" style="font-size:11px; margin-top:8px; color:var(--win-text);"></p>
+                <div class="message-box-buttons" style="margin-top: 12px;">
+                    <button class="win98-btn" style="min-width: 80px;" onclick="closeWgQrModal()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const COUNTRY_FLAGS = {
           "JP": "🇯🇵 JP", "US": "🇺🇸 US", "NL": "🇳🇱 NL", "DE": "🇩🇪 DE",
@@ -1250,7 +1409,7 @@
                 helpFeaturesTitle: "راهنمای کاربردی",
                 helpLinksTitle: "آدرس شبکه‌های اجتماعی",
                 helpSiteFeaturesTitle: "ویژگی‌های این وب",
-                helpSiteFeaturesText: "✨ مبدل پیشرفته V2Ray:\n• دریافت، ویرایش، تغییر دسته‌جمعی IP و پورت، و ادغام کانفیگ‌های VLESS، VMess، Trojan و SS.\n\n🛡️ مبدل WireGuard:\n• پشتیبانی از کانفیگ‌های اختصاصی Proton VPN.\n• تبدیل فایل‌های وایرگارد به فرمت‌های Clash، AmneziaWG و Wiresock به همراه تولید پکت‌های هرز.\n\n⚡ مبدل Clash / Sing-box:\n• تبدیل دوطرفه فایل‌ها و لینک‌های سابسکریپشن (JSON، YAML، TXT) به کلش و سینگ‌باکس با امکان روتینگ پیشرفته.",
+                helpSiteFeaturesText: "✨ مبدل پیشرفته V2Ray:\n• دریافت، ویرایش، تغییر دسته‌جمعی IP و پورت، و ادغام کانفیگ‌های VLESS، VMess، Trojan و SS.\n\n🛡️ مبدل WireGuard:\n• پشتیبانی از کانفیگ‌های اختصاصی Proton VPN.\n• تبدیل فایل‌های وایرگارد به فرمت‌های Clash، AmneziaWG و Wiresock به همراه تولید پکت‌های هرز.\n• اعتبارسنجی خودکار کانفیگ، پیشنهادهای آمنزیا ۱.۵، تصادفی‌سازی هر کانفیگ و خروجی گروهی ZIP.\n\n⚡ مبدل Clash / Sing-box:\n• تبدیل دوطرفه فایل‌ها و لینک‌های سابسکریپشن (JSON، YAML، TXT) به کلش و سینگ‌باکس با امکان روتینگ پیشرفته.",
                 helpIntro: "این ابزار به شما امکان می‌دهد پروتکل‌های ارتباطی مختلف نظیر VLESS ،VMess ،Trojan و Shadowsocks را به صورت همزمان فیلتر، ادغام و بازنویسی کنید.",
                 helpFeatures: "• دریافت مستقیم اطلاعات سابسکریپشن\n• تغییر و جایگزینی دسته‌جمعی IPها و پورت‌های سرورها\n• شخصی‌سازی و اصلاح یکپارچه اسامی کانفیگ‌ها\n• امکان دریافت خروجی نهایی به صورت متن ساده یا فایل فشرده با فرمت Base64\n• سیستم فیلترینگ هوشمند و نمایش QR کد بومی",
                 section_configuration: "پیکربندی فایل ورودی",
@@ -1268,6 +1427,14 @@
                 generate_random: "تولید مقادیر تصادفی",
                 amnezia_params: "پارامترهای آمنزیا ۱.۵",
                 wiresock_params: "پارامترهای Wiresock",
+                reset_i1_i5: "ریست I1–I5",
+                reset_defaults: "پیش‌فرض",
+                randomizePerConfig: "تصادفی‌سازی برای هر کانفیگ",
+                bulk_actions: "عملیات گروهی",
+                download_zip: "دانلود ZIP",
+                amnezia15_note_prefix: "توضیحات بیشتر در ",
+                amnezia15_official_docs: "مستندات رسمی Amnezia",
+                amnezia15_note_suffix: " موجود است.",
                 convert: "تبدیل کانفیگ",
                 clear: "پاک کردن",
                 download: "دانلود فایل",
@@ -1345,7 +1512,7 @@
                 helpFeaturesTitle: "Operations Guide",
                 helpLinksTitle: "Social Network Addresses",
                 helpSiteFeaturesTitle: "Features of this website",
-                helpSiteFeaturesText: "✨ V2Ray Converter:\n• Fetch, edit, mass replace IP/ports, and merge VLESS, VMess, Trojan, and SS configs.\n\n🛡️ WireGuard Converter:\n• Support for Proton VPN WireGuard configs.\n• Convert .conf to Clash, AmneziaWG, and Wiresock with Junk packet generator.\n\n⚡ Clash / Sing-box Converter:\n• Bi-directional conversion of sub links (JSON/YAML/TXT) into Clash and Sing-box with advanced routing.",
+                helpSiteFeaturesText: "✨ V2Ray Converter:\n• Fetch, edit, mass replace IP/ports, and merge VLESS, VMess, Trojan, and SS configs.\n\n🛡️ WireGuard Converter:\n• Support for Proton VPN WireGuard configs.\n• Convert .conf to Clash, AmneziaWG, and Wiresock with Junk packet generator.\n• Built-in config validation, Amnezia 1.5 presets, per-config randomization, and bulk ZIP export.\n\n⚡ Clash / Sing-box Converter:\n• Bi-directional conversion of sub links (JSON/YAML/TXT) into Clash and Sing-box with advanced routing.",
                 helpIntro: "This utility allows you to manage, edit, and merge various communication protocols including VLESS, VMess, Trojan, and Shadowsocks.",
                 helpFeatures: "• Direct online subscription fetching and processing\n• Mass replace and override IP addresses and port configurations\n• Uniform naming customization for all profile outputs\n• Generate standard link lists or compressed Base64 formatted subscription files\n• Built-in protocol filtering and offline QR code generator",
                 section_configuration: "Input Configuration",
@@ -1363,6 +1530,14 @@
                 generate_random: "Generate Random",
                 amnezia_params: "Amnezia 1.5 Parameters",
                 wiresock_params: "Wiresock Parameters",
+                reset_i1_i5: "Reset I1–I5",
+                reset_defaults: "Reset Defaults",
+                randomizePerConfig: "Randomize per Config",
+                bulk_actions: "Bulk Actions",
+                download_zip: "Download ZIP",
+                amnezia15_note_prefix: "More details in the ",
+                amnezia15_official_docs: "official Amnezia docs",
+                amnezia15_note_suffix: ".",
                 convert: "Convert",
                 clear: "Clear",
                 download: "Download File",
@@ -1465,8 +1640,8 @@
                     ? "ابزار تبدیل ساختاری پروتکل وایرگارد برای کلاینت‌های مختلف."
                     : "WireGuard profile structural converter for standard clients.";
                 helpFeaturesContent.innerText = currentLang === 'fa'
-                    ? "• پشتیبانی کامل از کانفیگ‌های وایرگارد Proton VPN\n• تبدیل فرمت .conf به Clash و AmneziaWG و Wiresock\n• تولید کلید و مقادیر پکت هرز به صورت سبک یا سنگین یا تصادفی\n• پردازش چند فایلی همزمان با امکان کپی و دانلود نتایج"
-                    : "• Full support for Proton VPN WireGuard configs\n• Converts standard .conf into Clash, AmneziaWG, and Wiresock profiles.\n• Generate Light, Heavy, or custom randomized Junk packet attributes.\n• Support multi-profile batch output with copy/download options.";
+                    ? "• پشتیبانی کامل از کانفیگ‌های وایرگارد Proton VPN\n• تبدیل فرمت .conf به Clash و AmneziaWG و Wiresock\n• تولید کلید و مقادیر پکت هرز به صورت سبک یا سنگین یا تصادفی (و امکان تصادفی‌سازی جدا برای هر کانفیگ)\n• پیشنهادهای آماده Amnezia 1.5 (I1–I5) به همراه امکان ورود مقادیر دلخواه\n• اعتبارسنجی خودکار کلیدها، Endpoint و AllowedIPs قبل از تبدیل\n• پردازش چند فایلی همزمان با نمایش جدا برای هرکدام، کپی/دانلود تکی یا دانلود گروهی ZIP\n• نمایش QR برای هر کانفیگ"
+                    : "• Full support for Proton VPN WireGuard configs\n• Converts standard .conf into Clash, AmneziaWG, and Wiresock profiles.\n• Generate Light, Heavy, or custom randomized Junk packet attributes (with optional per-config randomization).\n• Ready-made Amnezia 1.5 (I1–I5) presets, plus custom value entry.\n• Built-in validation of keys, Endpoint, and AllowedIPs before conversion.\n• Multi-profile batch processing with per-config tabs, single copy/download, or bulk ZIP export.\n• QR code preview for each config.";
             } else if (currentActiveApp === 'clashSingbox') {
                 v2rayTitle.innerText = i18n[currentLang].csHelpTitle;
                 helpIntro.innerText = currentLang === 'fa'
@@ -1537,28 +1712,28 @@
             document.getElementById('base64OutputOpt').checked = false;
 
             // General WireGuard Reset
-            document.getElementById('wgFiles').value = '';
-            document.getElementById('confInput').value = '';
-            document.getElementById('confInput').disabled = false;
-            document.getElementById('yamlOutput').value = '';
+            handleClearWg();
             document.getElementById('jc1').value = '';
             document.getElementById('jmin1').value = '';
             document.getElementById('jmax1').value = '';
+            document.getElementById('junk1').checked = true;
+            document.getElementById('randomizePerConfig').checked = false;
+            document.getElementById('enableAmnezia15').checked = false;
+            toggleAmnezia15();
             document.getElementById('i1_1').value = '';
             document.getElementById('i2_1').value = '';
             document.getElementById('i3_1').value = '';
             document.getElementById('i4_1').value = '';
             document.getElementById('i5_1').value = '';
+            document.querySelectorAll('.amnezia15-presets .win98-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('ws_id').value = '';
             document.getElementById('ws_jc1').value = '';
             document.getElementById('ws_jmin1').value = '';
             document.getElementById('ws_jmax1').value = '';
             document.getElementById('ws_ip').selectedIndex = 0;
             document.getElementById('ws_ib').selectedIndex = 0;
-            document.getElementById('downloadBtn').classList.add('hidden');
-            document.getElementById('copyBtn').classList.add('hidden');
-            if (document.getElementById('wgQrBtn')) document.getElementById('wgQrBtn').classList.add('hidden');
-            proxyList = [];
+            document.getElementById('clash').checked = true;
+            handleWgOptionChange('clash');
 
             // Clash/Singbox Reset
             document.getElementById('csSubUrlInput').value = '';
@@ -2034,7 +2209,7 @@
             const isWiresocket = formatId === 'wiresocket';
             document.getElementById('musor1').classList.toggle('hidden', isWiresocket);
             document.getElementById('musor2').classList.toggle('hidden', !isWiresocket);
-            
+
             const amnezia15Toggle = document.getElementById('amnezia15-toggle-label');
             if (amnezia15Toggle) {
                 amnezia15Toggle.style.display = isWiresocket ? 'none' : 'block';
@@ -2044,11 +2219,29 @@
                 amnezia15Checkbox.checked = false;
                 toggleAmnezia15();
             }
+            validateWgConvertButton();
+        }
+
+        function validateWgConvertButton() {
+            const selectedOption = document.querySelector('input[name="option"]:checked')?.id;
+            const wsId = document.getElementById('ws_id')?.value?.trim();
+            const convertBtn = document.querySelector('#wireguardView button[onclick="convertWireguard()"]');
+            if (!convertBtn) return;
+            if (selectedOption === 'wiresocket' && !wsId) {
+                convertBtn.disabled = true;
+                convertBtn.style.opacity = '0.5';
+                convertBtn.style.cursor = 'not-allowed';
+            } else {
+                convertBtn.disabled = false;
+                convertBtn.style.opacity = '1';
+                convertBtn.style.cursor = 'pointer';
+            }
         }
 
         function toggleAmnezia15() {
             const isChecked = document.getElementById('enableAmnezia15')?.checked || false;
-            document.getElementById('amnezia15-inputs')?.classList.toggle('hidden', !isChecked);
+            document.getElementById('amnezia15-inputs')?.classList.toggle('hidden', isChecked ? false : true);
+            // When Amnezia 1.5 (I1-I5) is active, the standard junk radios still apply (jc/jmin/jmax are independent of I1-I5)
         }
 
         function handleRandomJunk() {
@@ -2059,6 +2252,16 @@
             document.getElementById('jmin1').value = jmin;
             document.getElementById('jmax1').value = jmax;
             document.getElementById('junk3').checked = true;
+        }
+
+        function handleResetJunk() {
+            document.getElementById('junk1').checked = true;
+            document.getElementById('jc1').value = '';
+            document.getElementById('jmin1').value = '';
+            document.getElementById('jmax1').value = '';
+            const randomizeCb = document.getElementById('randomizePerConfig');
+            if (randomizeCb) randomizeCb.checked = false;
+            showToast(currentLang === 'fa' ? 'تنظیمات پکت هرز به حالت پیش‌فرض (سبک) بازگشت.' : 'Junk settings reset to Light defaults.');
         }
 
         function handleRandomWiresocket() {
@@ -2095,6 +2298,158 @@
             };
         }
 
+        // ── Amnezia 1.5 presets ───────────────────────────────────────────
+        const AMNEZIA15_PRESETS = {
+            set1: {
+                i1: '<b 0xce000000010897a297ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135fa85e196d9ad980b150122129ce2a9379531b0fd3e871ca5fdb883c369832f730e272d7b8b74f393f9f0fa43f11e510ecb2219a52984410c204cf875585340c62238e14ad04dff382f2c200e0ee22fe743b9c6b8b043121c5710ec289f471c91ee414fca8b8be8419ae8ce7ffc53837f6ade262891895f3f4cecd31bc93ac5599e18e4f01b472362b8056c3172b513051f8322d1062997ef4a383b01706598d08d48c221d30e74c7ce000cdad36b706b1bf9b0607c32ec4b3203a4ee21ab64df336212b9758280803fcab14933b0e7ee1e04a7becce3e2633f4852585c567894a5f9efe9706a151b615856647e8b7dba69ab357b3982f554549bef9256111b2d67afde0b496f16962d4957ff654232aa9e845b61463908309cfd9de0a6abf5f425f577d7e5f6440652aa8da5f73588e82e9470f3b21b27b28c649506ae1a7f5f15b876f56abc4615f49911549b9bb39dd804fde182bd2dcec0c33bad9b138ca07d4a4a1650a2c2686acea05727e2a78962a840ae428f55627516e73c83dd8893b02358e81b524b4d99fda6df52b3a8d7a5291326e7ac9d773c5b43b8444554ef5aea104a738ed650aa979674bbed38da58ac29d87c29d387d80b526065baeb073ce65f075ccb56e47533aef357dceaa8293a523c5f6f790be90e4731123d3c6152a70576e90b4ab5bc5ead01576c68ab633ff7d36dcde2a0b2c68897e1acfc4d6483aaaeb635dd63c96b2b6a7a2bfe042f6aed82e5363aa850aace12ee3b1a93f30d8ab9537df483152a5527faca21efc9981b304f11fc95336f5b9637b174c5a0659e2b22e159a9fed4b8e93047371175b1d6d9cc8ab745f3b2281537d1c75fb9451871864efa5d184c38c185fd203de206751b92620f7c369e031d2041e152040920ac2c5ab5340bfc9d0561176abf10a147287ea90758575ac6a9f5ac9f390d0d5b23ee12af583383d994e22c0cf42383834bcd3ada1b3825a0664d8f3fb678261d57601ddf94a8a68a7c273a18c08aa99c7ad8c6c42eab67718843597ec9930457359dfdfbce024afc2dcf9348579a57d8d3490b2fa99f278f1c37d87dad9b221acd575192ffae1784f8e60ec7cee4068b6b988f0433d96d6a1b1865f4e155e9fe020279f434f3bf1bd117b717b92f6cd1cc9bea7d45978bcc3f24bda631a36910110a6ec06da35f8966c9279d130347594f13e9e07514fa370754d1424c0a1545c5070ef9fb2acd14233e8a50bfc5978b5bdf8bc1714731f798d21e2004117c61f2989dd44f0cf027b27d4019e81ed4b5c31db347c4a3a4d85048d7093cf16753d7b0d15e078f5c7a5205dc2f87e330a1f716738dce1c6180e9d02869b5546f1c4d2748f8c90d9693cba4e0079297d22fd61402dea32ff0eb69ebd65a5d0b687d87e3a8b2c42b648aa723c7c7daf37abcc4bb85caea2ee8f55bec20e913b3324ab8f5c3304f820d42ad1b9f2ffc1a3af9927136b4419e1e579ab4c2ae3c776d293d397d575df181e6cae0a4ada5d67ecea171cca3288d57c7bbdaee3befe745fb7d634f70386d873b90c4d6c6596bb65af68f9e5121e67ebf0d89d3c909ceedfb32ce9575a7758ff080724e1ab5d5f43074ecb53a479af21ed03d7b6899c36631c0166f9d47e5e1d4528a5d3d3f744029c4b1c190cbfbad06f5f83f7ad0429fa9a2719c56ffe3783460e166de2d8>',
+                i2: '', i3: '', i4: '', i5: ''
+            },
+            set2: {
+                i1: '<b 0xc7000000010809a1ed4edbbe7615000044d017a61a0d774f04290f119e701ef0035df2b0ed571b0b575e6a07246b856eb6ec036fef07f1e07b861251ad737abeb67e64be714c1dcd865312b1b6c35c089c997aeb5c18f808696fe97289513945d84ca846467603e94e44224877f2c1d3261e4ac18740be4bd064369c94fc08978d99b54bf615250998639010c1284248e1d73004b81fcb20b559d8a17eced7eab3964b5b88ca7a3b8579fc8c1c934189e77143b4ac434138114b1048651b56545b87acbef0952763538f3ddeb37cfc6d58b4881c3b719d7ff78f6ee1324a2914a32381c05a64c700466d280be007253bb030d179c4f1b3dc221e1974e2ee6d6e2b9e8d709159b5ef22e1783dbba845c20ca1c83b066c73835920ad70b806df0aee0351e3fc9ab1e42e8b2a30fe235ff0612eee19744949cecee0463b76514ad90c1f7ceaa557c18586ab561d49482e73c85d0143785da14a441bf82f78783b61cccd44aecb1947516e79b5ca5a6b3a8aed6040fae0eeabdc55a88dc19ade832d99fca90c7a629cacc07192d7e47e3c6a271b95b0ea3392562a06a1cab79f40ea92916ebee197b7b5f14b251824e1ed20ff2ca80b1f03a43e45157589bc61b978e97851025b3b7ccc17d291e1cb60fe48a5c26829dce11dd23c2e73265a9ebf8617c985e4fee4681e863f990061f4dea465a7d2524bd0edcf4b48d4b8f25fc359b15babd2637284a4774077dca60091f1a781cfee1bef9713dd5943a579d7470bc5970542fbb27fdf77880a8d8751b1f642c7a3f019a05ab94bf63d3525ef34e9290b5c8d477f2714e6d6e3e4d35c1983f5e16fda57fcdf071b513f8f088dbe8d5a97577d17a5383a496c3f313adfdd47c962bbaebd6aa13b46439eb742622c29ca067db0ec1853064c3cbbffe0a215a19fce47d49703ed58ebbd89721172d256d1cf30188106fb2f863186511401fad54d087aa2fb3d1b85768db386bd7102e8060ac157bac011acdcdae2799b9aee1467c3424013455bd028fcaacdc3c77d28ea199967d617ea7d0d0815f3cc407934a76d1293dccba210d1709a13e5dd67c9ba47cd113f5bdd740358eff13164159fd09bc2f7ec6cfa64d9df7e2e2f88706b0ff3a92ccf6f078456cfe0bdd89292cfe2680badc1eac9f7d36efe8eb6912c7b164508d13e6c0911c15f73c233cbe4fc70ff2ade1e1be4bbb738e0939159e2078a9438f05b756a003371f4861481c38f1cdd2d7b06deb62869e9fe79a8abaa920646fa2e8fa28f0d80c136376c7b56046bae4c05c0cdf64efb8c47bbfc5a1a4c0b045061ef0d71618e0d206a1d7f245fd5c03191b152673ba8dff8e1b8de7c50234a93cba91e3888adb228cc02beded4b1c0946797d3ef02dec2edb6ad0ac21f89f4be364c317da7c22440e9f358d512203f4b7ab20388af68b8915d0152db2c8a0687bfaea870f7529bb92a22b35bd79bc6d490591406346ecd78342ee3563c4883a8251679691c2d4e963397e24653520795511b018915374c954bddb940a9d7a16d1c8bd798fc7dbfb0599a7074e13f87e14efa8d511bb2579ec029b1bda18fe971b30fbe19e986ff2686a69bf3f1bb929de93ae70345ebca998b11e0a2b41890cba628d8f6e7c4e94790735e5299b4ff07cd3080f7d53c9cbe1911d2cd5925b3213e033c272506a87886cf761a283a779564d3241e3c28f632e166b5d756e1786ce077614c4444e3f2aed5decb3613b925ea3e558c21d4faf8ba54edd0f3a5d4>',
+                i2: '', i3: '', i4: '', i5: ''
+            },
+            set3: {
+                i1: '<b 0x494e56495445207369703a626f624062696c6f78692e636f6d205349502f322e300d0a5669613a205349502f322e302f55445020706333332e61746c616e74612e636f6d3b6272616e63683d7a39684734624b3737366173646864730d0a4d61782d466f7277617264733a2037300d0a546f3a20426f62203c7369703a626f624062696c6f78692e636f6d3e0d0a46726f6d3a20416c696365203c7369703a616c6963654061746c616e74612e636f6d3e3b7461673d313932383330313737340d0a43616c6c2d49443a20613834623463373665363637313040706333332e61746c616e74612e636f6d0d0a435365713a2033313431353920494e564954450d0a436f6e746163743a203c7369703a616c69636540706333332e61746c616e74612e636f6d3e0d0a436f6e74656e742d547970653a206170706c69636174696f6e2f7364700d0a436f6e74656e742d4c656e6774683a20300d0a0d0a>',
+                i2: '<b 0x5349502f322e302031303020547279696e670d0a5669613a205349502f322e302f55445020706333332e61746c616e74612e636f6d3b6272616e63683d7a39684734624b3737366173646864730d0a546f3a20426f62203c7369703a626f624062696c6f78692e636f6d3e0d0a46726f6d3a20416c696365203c7369703a616c6963654061746c616e74612e636f6d3e3b7461673d313932383330313737340d0a43616c6c2d49443a20613834623463373665363637313040706333332e61746c616e74612e636f6d0d0a435365713a2033313431353920494e564954450d0a436f6e74656e742d4c656e6774683a20300d0a0d0a>',
+                i3: '', i4: '', i5: ''
+            },
+            custom: { i1: '', i2: '', i3: '', i4: '', i5: '' }
+        };
+
+        function applyAmnezia15Preset(preset) {
+            const data = AMNEZIA15_PRESETS[preset];
+            if (!data) return;
+            const fieldMap = { i1: 'i1_1', i2: 'i2_1', i3: 'i3_1', i4: 'i4_1', i5: 'i5_1' };
+            Object.entries(fieldMap).forEach(([key, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = data[key] ?? '';
+            });
+            document.querySelectorAll('.amnezia15-presets .win98-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`preset-${preset}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            showToast(preset !== 'custom'
+                ? (currentLang === 'fa' ? `پیشنهاد ${preset.toUpperCase()} اعمال شد.` : `Applied ${preset.toUpperCase()} preset`)
+                : (currentLang === 'fa' ? 'حالت سفارشی — مقادیر دلخواه را وارد کنید.' : 'Custom mode — enter your own values'));
+        }
+
+        function handleResetAmnezia15() {
+            ['i1_1', 'i2_1', 'i3_1', 'i4_1', 'i5_1'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            document.querySelectorAll('.amnezia15-presets .win98-btn').forEach(btn => btn.classList.remove('active'));
+            showToast(currentLang === 'fa' ? 'فیلدهای I1 تا I5 پاک شدند.' : 'I1–I5 fields cleared');
+        }
+
+        // ── Config validation / linting ───────────────────────────────────
+        function isValidWGKey(key) {
+            if (!key) return false;
+            return /^[A-Za-z0-9+/]{43}=$/.test(key);
+        }
+
+        function isValidIP(ip) {
+            return /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(ip.trim()) ||
+                   /^[0-9a-fA-F:]+\/\d{1,3}$/.test(ip.trim());
+        }
+
+        function isValidEndpoint(ep) {
+            if (!ep) return false;
+            if (ep.startsWith('[')) return /^\[.+\]:\d+$/.test(ep);
+            const parts = ep.split(':');
+            return parts.length === 2 && parts[1] && !isNaN(parseInt(parts[1]));
+        }
+
+        function validateWGConfig(wgConfig, label) {
+            const issues = [];
+            const iface = wgConfig.interface || {};
+            const peer = wgConfig.peers?.[0] || {};
+
+            if (!iface.privatekey) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? 'PrivateKey در بخش [Interface] وجود ندارد' : 'Missing PrivateKey in [Interface]'}` });
+            } else if (!isValidWGKey(iface.privatekey)) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? 'PrivateKey نامعتبر است (باید ۴۴ کاراکتر base64 باشد)' : 'PrivateKey appears malformed (expected 44-char base64)'}` });
+            }
+
+            if (!peer.publickey) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? 'PublicKey در بخش [Peer] وجود ندارد' : 'Missing PublicKey in [Peer]'}` });
+            } else if (!isValidWGKey(peer.publickey)) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? 'PublicKey نامعتبر است (باید ۴۴ کاراکتر base64 باشد)' : 'PublicKey appears malformed (expected 44-char base64)'}` });
+            }
+
+            if (!peer.endpoint) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? 'Endpoint در بخش [Peer] وجود ندارد' : 'Missing Endpoint in [Peer]'}` });
+            } else if (!isValidEndpoint(peer.endpoint)) {
+                issues.push({ level: 'error', msg: `[${label}] ${currentLang === 'fa' ? `Endpoint نامعتبر است: ${peer.endpoint}` : `Endpoint "${peer.endpoint}" is malformed (expected host:port)`}` });
+            }
+
+            if (!peer.allowedips) {
+                issues.push({ level: 'warning', msg: `[${label}] ${currentLang === 'fa' ? 'AllowedIPs در بخش [Peer] وجود ندارد' : 'Missing AllowedIPs in [Peer]'}` });
+            } else {
+                const invalidIPs = peer.allowedips.split(',').map(s => s.trim()).filter(ip => ip && !isValidIP(ip));
+                if (invalidIPs.length) {
+                    issues.push({ level: 'warning', msg: `[${label}] ${currentLang === 'fa' ? `AllowedIPs احتمالاً نامعتبر: ${invalidIPs.join(', ')}` : `Possibly malformed AllowedIPs: ${invalidIPs.join(', ')}`}` });
+                }
+            }
+
+            if (!iface.address) {
+                issues.push({ level: 'warning', msg: `[${label}] ${currentLang === 'fa' ? 'Address در بخش [Interface] وجود ندارد' : 'Missing Address in [Interface]'}` });
+            }
+
+            if (peer.presharedKey && !isValidWGKey(peer.presharedKey)) {
+                issues.push({ level: 'warning', msg: `[${label}] ${currentLang === 'fa' ? 'PresharedKey نامعتبر به نظر می‌رسد' : 'PresharedKey appears malformed'}` });
+            }
+
+            return issues;
+        }
+
+        function escapeHtmlWg(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function renderWgValidationPanel(allIssues) {
+            const panel = document.getElementById('wgValidationPanel');
+            if (!panel) return;
+            if (!allIssues.length) {
+                panel.classList.add('hidden');
+                panel.innerHTML = '';
+                return;
+            }
+            panel.classList.remove('hidden');
+            panel.innerHTML = allIssues.map(issue => {
+                const icon = issue.level === 'error' ? '✖' : issue.level === 'warning' ? '⚠' : '✔';
+                return `<div class="validation-item ${issue.level}">
+                    <span class="validation-icon">${icon}</span>
+                    <span class="validation-text">${escapeHtmlWg(issue.msg)}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function runWgValidationOnInput() {
+            const text = document.getElementById('confInput')?.value?.trim();
+            if (!text) {
+                renderWgValidationPanel([]);
+                return;
+            }
+            try {
+                const configs = parseMultipleWGConfigs(text);
+                const issues = configs.flatMap((cfg, idx) =>
+                    validateWGConfig(cfg, configs.length === 1 ? (currentLang === 'fa' ? 'کانفیگ' : 'Config') : `${currentLang === 'fa' ? 'کانفیگ' : 'Config'} ${idx + 1}`)
+                );
+                renderWgValidationPanel(issues);
+            } catch {
+                renderWgValidationPanel([]);
+            }
+        }
+
+        function debounceWg(fn, delay) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn(...args), delay);
+            };
+        }
+
+        // ── Parsing ────────────────────────────────────────────────────────
         function parseWGConfig(text) {
             const config = { interface: { amneziaOptions: {} }, peers: [] };
             let currentSection = null;
@@ -2125,7 +2480,7 @@
                 const value = trimmedLine.slice(equalIndex + 1).trim();
 
                 if (currentSection === 'interface') {
-                    const target = [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS, 'id', 'ip', 'ib'].includes(key) 
+                    const target = [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS, 'id', 'ip', 'ib'].includes(key)
                         ? config.interface.amneziaOptions : config.interface;
                     target[key] = value;
                 } else if (currentSection === 'peer' && peerIndex >= 0) {
@@ -2153,13 +2508,16 @@
                 .map(part => parseWGConfig(part));
         }
 
-        function convertToProxy(wgConfig, fileName, format = 'clash') {
+        // ── Proxy conversion ──────────────────────────────────────────────
+        function convertToProxy(wgConfig, fileName, format = 'clash', usePerConfigRandom = false) {
             const { interface: interfaceData, peers } = wgConfig;
             const peerData = peers[0];
             if (!peerData?.endpoint) {
                 throw new Error('Missing peer endpoint');
             }
-            const [server, port] = peerData.endpoint.split(':');
+            const colonIdx = peerData.endpoint.lastIndexOf(':');
+            const server = peerData.endpoint.slice(0, colonIdx);
+            const port = peerData.endpoint.slice(colonIdx + 1);
             const dnsList = interfaceData.dns ? interfaceData.dns.split(',').map(d => d.trim()) : [];
             let options = {};
             if (format === 'wiresocket') {
@@ -2168,37 +2526,49 @@
                 options.ip = interfaceData.amneziaOptions.ip || peerData.amneziaOptions.ip || options.ip;
                 options.ib = interfaceData.amneziaOptions.ib || peerData.amneziaOptions.ib || options.ib;
             } else {
-                options = generateAmneziaDefaults();
+                options = generateAmneziaDefaults(usePerConfigRandom);
                 for (const key of AMNEZIA15_KEYS) {
-                    if (interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key]) {
-                        options[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
-                    }
+                    const v = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
+                    if (v) options[key] = v;
                 }
-                for (const key of AMNEZIA_KEYS) {
-                    if (interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key]) {
-                        options[key] = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
-                    }
-                }
+                // NOTE: jc/jmin/jmax/s1/s2/h1-h4 (AMNEZIA_KEYS) are intentionally NOT
+                // pulled from the original config — the user's selected Light/Heavy/
+                // Custom junk settings above must always take priority.
             }
             let proxyName = peerData.name || fileName.replace('.conf', '');
             const originalName = proxyName;
             if (!proxyName) {
                 proxyName = `Random_${Math.random().toString(36).substr(2, 5)}`;
             } else {
-                proxyName = proxyName.replace(/FREE#?/g, '').replace(/-$/, '');
-                const flagPattern = /(?:^|[^a-z])([a-z]{2})(?=[-_\s\d]|$)/gi;
-                const match = flagPattern.exec(proxyName);
-                if (match) {
-                    const countryCode = match[1].toUpperCase();
-                    if (COUNTRY_FLAGS[countryCode]) {
-                        proxyName = COUNTRY_FLAGS[countryCode].split(' ')[0] + ' ' + proxyName;
+                proxyName = proxyName.replace(/FREE#?/gi, '').trim();
+                const isolatedTokens = proxyName
+                    .replace(/[\[\]\(\)\{\}\-_]/g, ' ')
+                    .replace(/\d+/g, ' ');
+                const candidates = isolatedTokens.match(/\b[a-zA-Z]{2}\b/g);
+                if (candidates) {
+                    const validCountryCode = candidates
+                        .map(code => code.toUpperCase())
+                        .find(code => COUNTRY_FLAGS[code]);
+                    if (validCountryCode) {
+                        const flagEmoji = COUNTRY_FLAGS[validCountryCode].split(' ')[0];
+                        const cleanRegex = new RegExp(`[\\s\\[\\(\\-_\\]]*${validCountryCode}[\\s\\]\\)\\-_\\]]*`, 'i');
+                        let cleanedName = proxyName.replace(cleanRegex, ' ').replace(/\s+/g, ' ').trim();
+                        if (!cleanedName || cleanedName === '-') {
+                            cleanedName = originalName.replace('.conf', '');
+                        }
+                        proxyName = `${flagEmoji} ${cleanedName}`;
                     }
                 }
+                proxyName = proxyName.replace(/[-\s_]+$/, '').trim();
             }
             const result = {
-                name: proxyName, originalName, type: "wireguard", server, port: parseInt(port),
+                name: proxyName, originalName, type: "wireguard",
+                server: server.replace(/^\[|\]$/g, ''),
+                serverRaw: server,
+                port: parseInt(port),
                 ip: interfaceData.address, private_key: interfaceData.privatekey, public_key: peerData.publickey,
-                preshared_key: peerData.presharedKey, allowed_ips: peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`),
+                preshared_key: peerData.presharedKey,
+                allowed_ips: peerData.allowedips ? peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`) : [],
                 udp: true, mtu: 1420, remote_dns_resolve: true, dns: dnsList,
                 isDefaultAmnezia: !(interfaceData.amneziaOptions.jc || peerData.amneziaOptions.jc)
             };
@@ -2210,12 +2580,43 @@
             return result;
         }
 
-        function generateAmneziaDefaults() {
-            return {
-                jc: 128, jmin: 1279, jmax: 1280, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4
+        function generateJunkValues(usePerConfigRandom) {
+            if (usePerConfigRandom) {
+                const jc = getRandomInt(1, 128);
+                const jmin = getRandomInt(1, 1279);
+                const jmax = getRandomInt(jmin + 1, 1280);
+                return { jc, jmin, jmax };
+            }
+            const selectedOption = document.querySelector('input[name="junk"]:checked')?.id;
+            const configs = {
+                junk1: { jc: 3, jmin: 1, jmax: 3 },
+                junk2: { jc: 5, jmin: 10, jmax: 40 },
+                junk3: {
+                    jc: parseInt(document.getElementById('jc1')?.value) || 128,
+                    jmin: parseInt(document.getElementById('jmin1')?.value) || 1279,
+                    jmax: parseInt(document.getElementById('jmax1')?.value) || 1280
+                }
             };
+            const cfg = configs[selectedOption] || configs.junk1;
+            if (cfg.jmax <= cfg.jmin) cfg.jmax = cfg.jmin + 1;
+            return cfg;
         }
 
+        function generateAmneziaDefaults(usePerConfigRandom) {
+            const junkValues = generateJunkValues(usePerConfigRandom);
+            const result = { ...junkValues, s1: 0, s2: 0, h1: 1, h2: 2, h3: 3, h4: 4 };
+            const isVersion15Enabled = document.getElementById('enableAmnezia15')?.checked;
+            if (isVersion15Enabled) {
+                result.i1 = document.getElementById('i1_1')?.value || '';
+                result.i2 = document.getElementById('i2_1')?.value || '';
+                result.i3 = document.getElementById('i3_1')?.value || '';
+                result.i4 = document.getElementById('i4_1')?.value || '';
+                result.i5 = document.getElementById('i5_1')?.value || '';
+            }
+            return result;
+        }
+
+        // ── Generators (YAML / .conf) ─────────────────────────────────────
         function generateAmneziaOptionsYAML(options) {
             const entries = Object.entries(options)
                 .filter(([key, value]) => value !== undefined && value !== '' && [...AMNEZIA_KEYS, ...AMNEZIA15_KEYS].includes(key))
@@ -2230,37 +2631,36 @@
             return `\n- name: DPI\n  type: select\n  proxies:\n${proxyNames}`;
         }
 
+        function generateSingleClashYaml(proxy) {
+            const parts = [
+                `- name: ${proxy.name}`,
+                `  type: ${proxy.type}`,
+                `  server: ${proxy.server}`,
+                `  port: ${proxy.port}`,
+                `  ip: ${proxy.ip}`,
+                `  private-key: ${proxy.private_key}`,
+                `  public-key: ${proxy.public_key}`
+            ];
+            if (proxy.preshared_key) parts.push(`  pre-shared-key: ${proxy.preshared_key}`);
+            parts.push(
+                `  allowed-ips: [${proxy.allowed_ips.join(', ')}]`,
+                `  udp: ${proxy.udp}`,
+                `  mtu: ${proxy.mtu}`,
+                `  remote-dns-resolve: ${proxy.remote_dns_resolve}`,
+                `  dns: [${proxy.dns.join(', ')}]`,
+                generateAmneziaOptionsYAML(proxy['amnezia-options'] || {})
+            );
+            return parts.join('\n');
+        }
+
         function generateClashYamlWg() {
             if (proxyList.length === 0) {
                 showToast(currentLang === 'fa' ? 'هیچ فایلی برای تبدیل پردازش نشده است.' : 'No processed files found for conversion.');
                 return;
             }
-            const yamlProxies = proxyList.map(proxy => {
-                const parts = [
-                    `- name: ${proxy.name}`,
-                    `  type: ${proxy.type}`,
-                    `  server: ${proxy.server}`,
-                    `  port: ${proxy.port}`,
-                    `  ip: ${proxy.ip}`,
-                    `  private-key: ${proxy.private_key}`,
-                    `  public-key: ${proxy.public_key}`
-                ];
-                if (proxy.preshared_key) {
-                    parts.push(`  pre-shared-key: ${proxy.preshared_key}`);
-                }
-                parts.push(
-                    `  allowed-ips: [${proxy.allowed_ips.join(', ')}]`,
-                    `  udp: ${proxy.udp}`,
-                    `  mtu: ${proxy.mtu}`,
-                    `  remote-dns-resolve: ${proxy.remote_dns_resolve}`,
-                    `  dns: [${proxy.dns.join(', ')}]`,
-                    generateAmneziaOptionsYAML(proxy['amnezia-options'] || {})
-                );
-                return parts.join('\n');
-            }).join('\n');
-            const proxyGroups = generateProxyGroups(proxyList);
-            const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${proxyGroups}`;
-            displayWgOutput(fullYaml, 'clash-config.yaml', 'clash');
+            const yamlProxies = proxyList.map(generateSingleClashYaml).join('\n');
+            const fullYaml = `proxies:\n${yamlProxies}\nproxy-groups:${generateProxyGroups(proxyList)}`;
+            displayWgOutput(fullYaml, 'clash-config.yaml', 'clash', generateSingleClashYaml, 'yaml');
         }
 
         function generateSingleAWGConfig(proxy) {
@@ -2276,15 +2676,15 @@
             }
             configLines.push(`MTU = ${proxy.mtu}`);
             configLines.push(
-                `Jc = ${options.jc || 128}`,
-                `Jmin = ${options.jmin || 1279}`,
-                `Jmax = ${options.jmax || 1280}`,
-                `S1 = ${options.s1 || 0}`,
-                `S2 = ${options.s2 || 0}`,
-                `H1 = ${options.h1 || 1}`,
-                `H2 = ${options.h2 || 2}`,
-                `H3 = ${options.h3 || 3}`,
-                `H4 = ${options.h4 || 4}`
+                `Jc = ${options.jc ?? 128}`,
+                `Jmin = ${options.jmin ?? 1279}`,
+                `Jmax = ${options.jmax ?? 1280}`,
+                `S1 = ${options.s1 ?? 0}`,
+                `S2 = ${options.s2 ?? 0}`,
+                `H1 = ${options.h1 ?? 1}`,
+                `H2 = ${options.h2 ?? 2}`,
+                `H3 = ${options.h3 ?? 3}`,
+                `H4 = ${options.h4 ?? 4}`
             );
             if (options.i1) configLines.push(`I1 = ${options.i1}`);
             if (options.i2) configLines.push(`I2 = ${options.i2}`);
@@ -2298,7 +2698,7 @@
             }
             configLines.push(
                 `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
-                `Endpoint = ${proxy.server}:${proxy.port}`
+                `Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`
             );
             return configLines.join('\n');
         }
@@ -2310,7 +2710,7 @@
             }
             const awgConfigs = proxyList.map(generateSingleAWGConfig);
             const finalOutput = awgConfigs.join('\n\n');
-            displayWgOutput(finalOutput, 'amnezia.conf', 'awg', generateSingleAWGConfig);
+            displayWgOutput(finalOutput, 'amnezia.conf', 'awg', generateSingleAWGConfig, 'conf');
         }
 
         function generateSingleWiresocketConfig(proxy) {
@@ -2326,15 +2726,15 @@
             }
             configLines.push(`MTU = ${proxy.mtu}`);
             configLines.push(
-                `Jc = ${options.jc || 128}`,
-                `Jmin = ${options.jmin || 1279}`,
-                `Jmax = ${options.jmax || 1280}`,
-                `S1 = ${options.s1 || 0}`,
-                `S2 = ${options.s2 || 0}`,
-                `H1 = ${options.h1 || 1}`,
-                `H2 = ${options.h2 || 2}`,
-                `H3 = ${options.h3 || 3}`,
-                `H4 = ${options.h4 || 4}`
+                `Jc = ${options.jc ?? 128}`,
+                `Jmin = ${options.jmin ?? 1279}`,
+                `Jmax = ${options.jmax ?? 1280}`,
+                `S1 = ${options.s1 ?? 0}`,
+                `S2 = ${options.s2 ?? 0}`,
+                `H1 = ${options.h1 ?? 1}`,
+                `H2 = ${options.h2 ?? 2}`,
+                `H3 = ${options.h3 ?? 3}`,
+                `H4 = ${options.h4 ?? 4}`
             );
             if (options.id) configLines.push(`Id = ${options.id}`);
             if (options.ip) configLines.push(`Ip = ${options.ip}`);
@@ -2346,7 +2746,7 @@
             }
             configLines.push(
                 `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
-                `Endpoint = ${proxy.server}:${proxy.port}`
+                `Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`
             );
             return configLines.join('\n');
         }
@@ -2358,7 +2758,7 @@
             }
             const configs = proxyList.map(generateSingleWiresocketConfig);
             const finalOutput = configs.join('\n\n');
-            displayWgOutput(finalOutput, 'wiresock.conf', 'wiresocket', generateSingleWiresocketConfig);
+            displayWgOutput(finalOutput, 'wiresock.conf', 'wiresocket', generateSingleWiresocketConfig, 'conf');
         }
 
         function getWgConfigFileName(proxy, index, extension) {
@@ -2402,47 +2802,139 @@
             }
         }
 
-        function displayWgOutput(content, defaultFileName, format, perProxyContentFn) {
-            document.getElementById('yamlOutput').value = content;
-            const dlBtn = document.getElementById('downloadBtn');
-            const cpBtn = document.getElementById('copyBtn');
-            const qrBtn = document.getElementById('wgQrBtn');
-            dlBtn.classList.remove('hidden');
-            cpBtn.classList.remove('hidden');
-            if (qrBtn) qrBtn.classList.remove('hidden');
-
-            const extension = format === 'clash' ? 'yaml' : (format === 'wiresocket' ? 'conf' : 'conf');
-            const canZip = perProxyContentFn && proxyList.length > 1 && format !== 'clash';
-
-            dlBtn.onclick = () => {
-                if (canZip) {
-                    downloadWgZip(proxyList, perProxyContentFn, extension, `wg-configs-${format}.zip`);
-                    return;
-                }
-                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = defaultFileName;
-                a.click();
-            };
-
-            cpBtn.onclick = () => {
-                navigator.clipboard.writeText(content).then(() => {
-                    showToast(i18n[currentLang].copied);
-                });
-            };
-
-            wgQrState = {
-                format,
-                proxies: proxyList.slice(),
-                contentFn: perProxyContentFn || null,
-                combinedContent: content
-            };
+        function downloadWgBlob(content, fileName) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
         }
 
+        // ── Tabbed per-config output UI ───────────────────────────────────
         let wgQrState = null;
 
+        function displayWgOutput(combinedContent, defaultFileName, format, perProxyContentFn, extension) {
+            const proxies = proxyList.slice();
+            const tabsContainer = document.getElementById('wgConfigTabsContainer');
+            const tabsHeader = document.getElementById('wgConfigTabsHeader');
+            const tabsBody = document.getElementById('wgConfigTabsBody');
+            const legacyTextarea = document.getElementById('yamlOutput');
+            const legacyBtnContainer = document.getElementById('wgLegacyBtnContainer');
+
+            const useTabs = proxies.length > 1 && format !== 'clash';
+            // Clash output is one combined YAML document (proxy-groups span all proxies),
+            // so for Clash we always show the single combined view even with multiple proxies.
+
+            if (useTabs) {
+                legacyTextarea.classList.add('hidden');
+                legacyBtnContainer.classList.add('hidden');
+                tabsContainer.classList.remove('hidden');
+
+                tabsHeader.innerHTML = '';
+                tabsBody.innerHTML = '';
+
+                proxies.forEach((proxy, idx) => {
+                    const content = perProxyContentFn(proxy, idx);
+                    const shortName = (proxy.originalName || `Config ${idx + 1}`)
+                        .replace(/[^a-z0-9 _-]/gi, '').trim().slice(0, 16) || `Config ${idx + 1}`;
+
+                    const tabBtn = document.createElement('button');
+                    tabBtn.className = `win98-tab${idx === 0 ? ' active' : ''}`;
+                    tabBtn.textContent = shortName;
+                    tabBtn.title = proxy.originalName || `Config ${idx + 1}`;
+                    tabBtn.onclick = () => activateWgTab(idx);
+                    tabsHeader.appendChild(tabBtn);
+
+                    const pane = document.createElement('div');
+                    pane.className = `wg-config-tab-pane${idx === 0 ? ' active' : ''}`;
+
+                    const ta = document.createElement('textarea');
+                    ta.className = 'win98-input';
+                    ta.value = content;
+                    ta.readOnly = true;
+                    ta.spellcheck = false;
+                    pane.appendChild(ta);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'wg-tab-pane-actions';
+
+                    const dlBtn = document.createElement('button');
+                    dlBtn.className = 'win98-btn';
+                    dlBtn.innerHTML = `<span>${i18n[currentLang].download}</span>`;
+                    dlBtn.onclick = () => downloadWgBlob(content, getWgConfigFileName(proxy, idx, extension));
+                    actionsDiv.appendChild(dlBtn);
+
+                    const cpBtn = document.createElement('button');
+                    cpBtn.className = 'win98-btn';
+                    cpBtn.innerHTML = `<span>${i18n[currentLang].copy}</span>`;
+                    cpBtn.onclick = () => {
+                        navigator.clipboard.writeText(ta.value).then(() => showToast(i18n[currentLang].copied));
+                    };
+                    actionsDiv.appendChild(cpBtn);
+
+                    if (format !== 'clash') {
+                        const qrBtn = document.createElement('button');
+                        qrBtn.className = 'win98-btn';
+                        qrBtn.innerHTML = `<span>${i18n[currentLang].show_qr}</span>`;
+                        qrBtn.onclick = () => openWgQrModalFor(proxies, idx, perProxyContentFn);
+                        actionsDiv.appendChild(qrBtn);
+                    }
+
+                    pane.appendChild(actionsDiv);
+                    tabsBody.appendChild(pane);
+                });
+
+                const dlAllBtn = document.getElementById('downloadBtn');
+                const cpAllBtn = document.getElementById('copyBtn');
+                const zipBtn = document.getElementById('downloadZipBtn');
+
+                dlAllBtn.classList.remove('hidden');
+                cpAllBtn.classList.remove('hidden');
+                zipBtn.classList.remove('hidden');
+
+                dlAllBtn.onclick = () => downloadWgZip(proxies, perProxyContentFn, extension, `wg-configs-${format}.zip`);
+                cpAllBtn.onclick = () => {
+                    navigator.clipboard.writeText(combinedContent).then(() => showToast(i18n[currentLang].copied));
+                };
+                zipBtn.onclick = () => downloadWgZip(proxies, perProxyContentFn, extension, `wg-configs-${format}.zip`);
+
+                wgQrState = { format, proxies, contentFn: perProxyContentFn, combinedContent };
+            } else {
+                tabsContainer.classList.add('hidden');
+                legacyTextarea.classList.remove('hidden');
+                legacyBtnContainer.classList.remove('hidden');
+
+                legacyTextarea.value = combinedContent;
+                const dlBtn = document.getElementById('downloadBtnLegacy');
+                const cpBtn = document.getElementById('copyBtnLegacy');
+                const qrBtn = document.getElementById('wgQrBtnLegacy');
+                dlBtn.classList.remove('hidden');
+                cpBtn.classList.remove('hidden');
+                if (qrBtn) qrBtn.classList.remove('hidden');
+
+                dlBtn.onclick = () => downloadWgBlob(combinedContent, defaultFileName);
+                cpBtn.onclick = () => {
+                    navigator.clipboard.writeText(combinedContent).then(() => showToast(i18n[currentLang].copied));
+                };
+                if (qrBtn) qrBtn.onclick = () => openWgQrModalFor(proxies, 0, format !== 'clash' ? perProxyContentFn : null, combinedContent);
+
+                wgQrState = { format, proxies, contentFn: format !== 'clash' ? perProxyContentFn : null, combinedContent };
+            }
+        }
+
+        function activateWgTab(idx) {
+            document.querySelectorAll('#wgConfigTabsHeader .win98-tab').forEach((btn, i) => {
+                btn.classList.toggle('active', i === idx);
+            });
+            document.querySelectorAll('#wgConfigTabsBody .wg-config-tab-pane').forEach((pane, i) => {
+                pane.classList.toggle('active', i === idx);
+            });
+        }
+
+        // ── QR Modal ───────────────────────────────────────────────────────
         function renderWgQrFor(text) {
             const canvas = document.getElementById('wgQrCanvas');
             const note = document.getElementById('wgQrNote');
@@ -2457,7 +2949,12 @@
             }
         }
 
-        function openWgQrModal() {
+        function openWgQrModalFor(proxies, startIdx, contentFn, combinedContent) {
+            wgQrState = { proxies, contentFn, combinedContent };
+            openWgQrModal(startIdx || 0);
+        }
+
+        function openWgQrModal(startIdx) {
             if (!wgQrState) return;
             const modal = document.getElementById('wgQrModal');
             const tabsBar = document.getElementById('wgQrTabsBar');
@@ -2477,8 +2974,9 @@
                     };
                     tabsBar.appendChild(btn);
                 });
-                tabsBar.firstChild.classList.add('active');
-                renderWgQrFor(wgQrState.contentFn(wgQrState.proxies[0], 0));
+                const initialIdx = startIdx || 0;
+                tabsBar.children[initialIdx]?.classList.add('active');
+                renderWgQrFor(wgQrState.contentFn(wgQrState.proxies[initialIdx], initialIdx));
             } else {
                 tabsBar.classList.add('hidden');
                 const singleContent = wgQrState.contentFn
@@ -2494,13 +2992,19 @@
             document.getElementById('wgQrModal').style.display = 'none';
         }
 
+        // ── File input / drag & drop ─────────────────────────────────────
         document.getElementById('wgFiles').addEventListener('change', function(e) {
             const files = e.target.files;
+            const confInputEl = document.getElementById('confInput');
             if (!files.length) {
-                document.getElementById('confInput').disabled = false;
+                confInputEl.disabled = false;
+                confInputEl.style.opacity = '1';
+                confInputEl.style.cursor = 'text';
                 updateWgFileLabel();
+                renderWgValidationPanel([]);
                 return;
             }
+            document.getElementById('fileList').innerText = Array.from(files).map(f => f.name).join(', ');
             let loaded = 0;
             let combinedText = "";
             Array.from(files).forEach(file => {
@@ -2509,8 +3013,11 @@
                     combinedText += String(reader.result).trim() + "\n\n";
                     loaded++;
                     if (loaded === files.length) {
-                        document.getElementById('confInput').value = combinedText.trim();
-                        document.getElementById('confInput').disabled = true;
+                        confInputEl.value = combinedText.trim();
+                        confInputEl.disabled = true;
+                        confInputEl.style.opacity = '0.7';
+                        confInputEl.style.cursor = 'not-allowed';
+                        runWgValidationOnInput();
                     }
                 };
                 reader.readAsText(file);
@@ -2529,6 +3036,7 @@
                     if (loaded === files.length) {
                         document.getElementById('confInput').value = combined.trim();
                         document.getElementById('confInput').disabled = false;
+                        runWgValidationOnInput();
                     }
                 };
                 reader.readAsText(file);
@@ -2555,7 +3063,7 @@
                 zone.addEventListener('drop', (e) => {
                     const files = e.dataTransfer.files;
                     if (!files.length) return;
-                    
+
                     if (zone.id === 'csUploadLabel' || zone.id === 'csInputArea') {
                         const acceptedFiles = Array.from(files).filter(f =>
                             f.name.endsWith('.txt') || f.name.endsWith('.yaml') || f.name.endsWith('.yml') || f.name.endsWith('.json')
@@ -2594,14 +3102,29 @@
             }
         }
 
+        function resetWgTabsUI() {
+            document.getElementById('wgConfigTabsContainer').classList.add('hidden');
+            document.getElementById('wgConfigTabsHeader').innerHTML = '';
+            document.getElementById('wgConfigTabsBody').innerHTML = '';
+            ['downloadBtn', 'copyBtn', 'downloadZipBtn'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+            document.getElementById('yamlOutput').value = '';
+            document.getElementById('yamlOutput').classList.add('hidden');
+            document.getElementById('wgLegacyBtnContainer').classList.add('hidden');
+            ['downloadBtnLegacy', 'copyBtnLegacy', 'wgQrBtnLegacy'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+        }
+
         function handleClearWg() {
             document.getElementById('confInput').value = "";
             document.getElementById('confInput').disabled = false;
+            document.getElementById('confInput').style.opacity = '1';
+            document.getElementById('confInput').style.cursor = 'text';
             document.getElementById('wgFiles').value = "";
-            document.getElementById('yamlOutput').value = "";
-            document.getElementById('downloadBtn').classList.add('hidden');
-            document.getElementById('copyBtn').classList.add('hidden');
-            document.getElementById('wgQrBtn').classList.add('hidden');
+            resetWgTabsUI();
+            renderWgValidationPanel([]);
             proxyList = [];
             wgQrState = null;
             updateWgFileLabel();
@@ -2621,14 +3144,34 @@
                 showToast(i18n[currentLang].emptyInput);
                 return;
             }
+
             proxyList = [];
+            resetWgTabsUI();
+
+            const randomPerConfig = document.getElementById('randomizePerConfig')?.checked || false;
+            const allIssues = [];
+
             try {
                 const wgConfigs = parseMultipleWGConfigs(textInput);
                 wgConfigs.forEach((wgConfig, idx) => {
-                    const proxy = convertToProxy(wgConfig, `config_${idx + 1}.conf`, selectedFormat);
-                    proxyList.push(proxy);
+                    const label = wgConfigs.length === 1 ? (currentLang === 'fa' ? 'کانفیگ' : 'Config') : `${currentLang === 'fa' ? 'کانفیگ' : 'Config'} ${idx + 1}`;
+                    const issues = validateWGConfig(wgConfig, label);
+                    allIssues.push(...issues);
+
+                    const hasErrors = issues.some(i => i.level === 'error');
+                    if (!hasErrors) {
+                        const proxy = convertToProxy(wgConfig, `config_${idx + 1}.conf`, selectedFormat, randomPerConfig);
+                        proxyList.push(proxy);
+                    }
                 });
-                
+
+                renderWgValidationPanel(allIssues);
+
+                if (!proxyList.length) {
+                    showToast(currentLang === 'fa' ? 'هیچ کانفیگ معتبری برای تبدیل یافت نشد.' : 'No valid configs could be converted.');
+                    return;
+                }
+
                 if (selectedFormat === 'clash') {
                     generateClashYamlWg();
                 } else if (selectedFormat === 'awg') {
@@ -2641,6 +3184,27 @@
                 showToast(error.message);
             }
         }
+
+        // Wire up live validation + reset/preset buttons + randomize toggle behavior
+        document.getElementById('confInput').addEventListener('input', debounceWg(runWgValidationOnInput, 600));
+        document.getElementById('resetJunkBtn')?.addEventListener('click', handleResetJunk);
+        document.getElementById('resetAmnezia15Btn')?.addEventListener('click', handleResetAmnezia15);
+        document.getElementById('ws_id')?.addEventListener('input', validateWgConvertButton);
+        document.querySelectorAll('input[name="junk"]').forEach(r => {
+            r.addEventListener('change', function() {
+                if (this.id === 'junk1' || this.id === 'junk2') {
+                    const randomizeCheckbox = document.getElementById('randomizePerConfig');
+                    if (randomizeCheckbox) randomizeCheckbox.checked = false;
+                }
+            });
+        });
+        document.getElementById('randomizePerConfig')?.addEventListener('change', function() {
+            if (this.checked) {
+                const junk3Radio = document.getElementById('junk3');
+                if (junk3Radio) junk3Radio.checked = true;
+            }
+        });
+
 
 
         // ==========================================================================
@@ -3759,6 +4323,7 @@
         });
 
         updateLanguage();
+        validateWgConvertButton();
     </script>
 </body>
 </html>

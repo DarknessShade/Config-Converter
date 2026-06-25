@@ -861,6 +861,15 @@
                     <div class="editor-actions-row">
                         <button type="button" class="win98-btn" onclick="pasteFromClipboard()" id="btnPasteTooltip">جایگذاری</button>
                         <button type="button" class="win98-btn" onclick="clearMainInput()" id="btnClearTooltip">پاک کردن</button>
+                        <button type="button" class="win98-btn" onclick="minifyMainInputJson()" id="btnMinifyJson" data-i18n="minifyJsonBtn">Minify JSON</button>
+                    </div>
+
+                    <div id="minifyJsonResultBox" class="hidden" style="margin-top: 10px;">
+                        <span class="label-with-icon" data-i18n="minifyJsonResultLabel">خروجی فشرده‌شده:</span>
+                        <textarea id="minifyJsonResultArea" readonly style="direction: ltr; height: 100px;"></textarea>
+                        <div class="editor-actions-row">
+                            <button type="button" class="win98-btn" id="btnCopyMinifyJson" data-i18n="copy">کپی خروجی</button>
+                        </div>
                     </div>
                 </div>
 
@@ -958,6 +967,7 @@
                                     <button type="button" class="win98-btn" id="preset-set1" onclick="applyAmnezia15Preset('set1')">Set1</button>
                                     <button type="button" class="win98-btn" id="preset-set2" onclick="applyAmnezia15Preset('set2')">Set2</button>
                                     <button type="button" class="win98-btn" id="preset-set3" onclick="applyAmnezia15Preset('set3')">Set3</button>
+                                    <button type="button" class="win98-btn" id="preset-random-i1" onclick="randomizeAmneziaI1()" data-i18n="random_i1">مقادیر تصادفی</button>
                                     <button type="button" class="win98-btn" id="preset-custom" onclick="applyAmnezia15Preset('custom')" data-i18n="custom_settings">سفارشی</button>
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:4px;">
@@ -1046,6 +1056,40 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Custom Config Section (Overrides) -->
+                        <div class="group-box" id="wgCustomOverridesBox">
+                            <span class="group-box-title" data-i18n="custom_wg_params">مقادیر سفارشی (اختیاری)</span>
+                            
+                            <!-- ردیف اول: ۳ آیتم -->
+                            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
+                                <div>
+                                    <span style="font-size: 11px;">Address:</span>
+                                    <input type="text" id="custom_wg_address" placeholder="10.0.0.1/32" style="direction:ltr;">
+                                </div>
+                                <div>
+                                    <span style="font-size: 11px;">DNS:</span>
+                                    <input type="text" id="custom_wg_dns" placeholder="1.1.1.1" style="direction:ltr;">
+                                </div>
+                                <div>
+                                    <span style="font-size: 11px;">MTU:</span>
+                                    <input type="text" id="custom_wg_mtu" placeholder="1280" style="direction:ltr;">
+                                </div>
+                            </div>
+
+                            <!-- ردیف دوم: ۲ آیتم -->
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                                <div>
+                                    <span style="font-size: 11px;">AllowedIPs:</span>
+                                    <input type="text" id="custom_wg_allowedips" placeholder="0.0.0.0/0, ::/0" style="direction:ltr;">
+                                </div>
+                                <div>
+                                    <span style="font-size: 11px;">PersistentKeepalive:</span>
+                                    <input type="text" id="custom_wg_keepalive" placeholder="25" style="direction:ltr;">
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -1334,6 +1378,12 @@
         const AMNEZIA_KEYS = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4'];
         const AMNEZIA15_KEYS = ['i1', 'i2', 'i3', 'i4', 'i5'];
 
+        const I1_HEX_LIST = [
+            '<b 0xce000000010897a297ecc34cd6dd000044d0ec2e2e1ea2991f467ace4222129b5a098823784694b4897b9986ae0b7280135fa85e196d9ad980b150122129ce2a9379531b0fd3e871ca5fdb883c369832f730e272d7b8b74f393f9f0fa43f11e510ecb2219a52984410c204cf875585340c62238e14ad04dff382f2c200e0ee22fe743b9c6b8b043121c5710ec289f471c91ee414fca8b8be8419ae8ce7ffc53837f6ade262891895f3f4cecd31bc93ac5599e18e4f01b472362b8056c3172b513051f8322d1062997ef4a383b01706598d08d48c221d30e74c7ce000cdad36b706b1bf9b0607c32ec4b3203a4ee21ab64df336212b9758280803fcab14933b0e7ee1e04a7becce3e2633f4852585c567894a5f9efe9706a151b615856647e8b7dba69ab357b3982f554549bef9256111b2d67afde0b496f16962d4957ff654232aa9e845b61463908309cfd9de0a6abf5f425f577d7e5f6440652aa8da5f73588e82e9470f3b21b27b28c649506ae1a7f5f15b876f56abc4615f49911549b9bb39dd804fde182bd2dcec0c33bad9b138ca07d4a4a1650a2c2686acea05727e2a78962a840ae428f55627516e73c83dd8893b02358e81b524b4d99fda6df52b3a8d7a5291326e7ac9d773c5b43b8444554ef5aea104a738ed650aa979674bbed38da58ac29d87c29d387d80b526065baeb073ce65f075ccb56e47533aef357dceaa8293a523c5f6f790be90e4731123d3c6152a70576e90b4ab5bc5ead01576c68ab633ff7d36dcde2a0b2c68897e1acfc4d6483aaaeb635dd63c96b2b6a7a2bfe042f6aed82e5363aa850aace12ee3b1a93f30d8ab9537df483152a5527faca21efc9981b304f11fc95336f5b9637b174c5a0659e2b22e159a9fed4b8e93047371175b1d6d9cc8ab745f3b2281537d1c75fb9451871864efa5d184c38c185fd203de206751b92620f7c369e031d2041e152040920ac2c5ab5340bfc9d0561176abf10a147287ea90758575ac6a9f5ac9f390d0d5b23ee12af583383d994e22c0cf42383834bcd3ada1b3825a0664d8f3fb678261d57601ddf94a8a68a7c273a18c08aa99c7ad8c6c42eab67718843597ec9930457359dfdfbce024afc2dcf9348579a57d8d3490b2fa99f278f1c37d87dad9b221acd575192ffae1784f8e60ec7cee4068b6b988f0433d96d6a1b1865f4e155e9fe020279f434f3bf1bd117b717b92f6cd1cc9bea7d45978bcc3f24bda631a36910110a6ec06da35f8966c9279d130347594f13e9e07514fa370754d1424c0a1545c5070ef9fb2acd14233e8a50bfc5978b5bdf8bc1714731f798d21e2004117c61f2989dd44f0cf027b27d4019e81ed4b5c31db347c4a3a4d85048d7093cf16753d7b0d15e078f5c7a5205dc2f87e330a1f716738dce1c6180e9d02869b5546f1c4d2748f8c90d9693cba4e0079297d22fd61402dea32ff0eb69ebd65a5d0b687d87e3a8b2c42b648aa723c7c7daf37abcc4bb85caea2ee8f55bec20e913b3324ab8f5c3304f820d42ad1b9f2ffc1a3af9927136b4419e1e579ab4c2ae3c776d293d397d575df181e6cae0a4ada5d67ecea171cca3288d57c7bbdaee3befe745fb7d634f70386d873b90c4d6c6596bb65af68f9e5121e67ebf0d89d3c909ceedfb32ce9575a7758ff080724e1ab5d5f43074ecb53a479af21ed03d7b6899c36631c0166f9d47e5e1d4528a5d3d3f744029c4b1c190cbfbad06f5f83f7ad0429fa9a2719c56ffe3783460e166de2d8>',
+            '<b 0xc7000000010809a1ed4edbbe7615000044d017a61a0d774f04290f119e701ef0035df2b0ed571b0b575e6a07246b856eb6ec036fef07f1e07b861251ad737abeb67e64be714c1dcd865312b1b6c35c089c997aeb5c18f808696fe97289513945d84ca846467603e94e44224877f2c1d3261e4ac18740be4bd064369c94fc08978d99b54bf615250998639010c1284248e1d73004b81fcb20b559d8a17eced7eab3964b5b88ca7a3b8579fc8c1c934189e77143b4ac434138114b1048651b56545b87acbef0952763538f3ddeb37cfc6d58b4881c3b719d7ff78f6ee1324a2914a32381c05a64c700466d280be007253bb030d179c4f1b3dc221e1974e2ee6d6e2b9e8d709159b5ef22e1783dbba845c20ca1c83b066c73835920ad70b806df0aee0351e3fc9ab1e42e8b2a30fe235ff0612eee19744949cecee0463b76514ad90c1f7ceaa557c18586ab561d49482e73c85d0143785da14a441bf82f78783b61cccd44aecb1947516e79b5ca5a6b3a8aed6040fae0eeabdc55a88dc19ade832d99fca90c7a629cacc07192d7e47e3c6a271b95b0ea3392562a06a1cab79f40ea92916ebee197b7b5f14b251824e1ed20ff2ca80b1f03a43e45157589bc61b978e97851025b3b7ccc17d291e1cb60fe48a5c26829dce11dd23c2e73265a9ebf8617c985e4fee4681e863f990061f4dea465a7d2524bd0edcf4b48d4b8f25fc359b15babd2637284a4774077dca60091f1a781cfee1bef9713dd5943a579d7470bc5970542fbb27fdf77880a8d8751b1f642c7a3f019a05ab94bf63d3525ef34e9290b5c8d477f2714e6d6e3e4d35c1983f5e16fda57fcdf071b513f8f088dbe8d5a97577d17a5383a496c3f313adfdd47c962bbaebd6aa13b46439eb742622c29ca067db0ec1853064c3cbbffe0a215a19fce47d49703ed58ebbd89721172d256d1cf30188106fb2f863186511401fad54d087aa2fb3d1b85768db386bd7102e8060ac157bac011acdcdae2799b9aee1467c3424013455bd028fcaacdc3c77d28ea199967d617ea7d0d0815f3cc407934a76d1293dccba210d1709a13e5dd67c9ba47cd113f5bdd740358eff13164159fd09bc2f7ec6cfa64d9df7e2e2f88706b0ff3a92ccf6f078456cfe0bdd89292cfe2680badc1eac9f7d36efe8eb6912c7b164508d13e6c0911c15f73c233cbe4fc70ff2ade1e1be4bbb738e0939159e2078a9438f05b756a003371f4861481c38f1cdd2d7b06deb62869e9fe79a8abaa920646fa2e8fa28f0d80c136376c7b56046bae4c05c0cdf64efb8c47bbfc5a1a4c0b045061ef0d71618e0d206a1d7f245fd5c03191b152673ba8dff8e1b8de7c50234a93cba91e3888adb228cc02beded4b1c0946797d3ef02dec2edb6ad0ac21f89f4be364c317da7c22440e9f358d512203f4b7ab20388af68b8915d0152db2c8a0687bfaea870f7529bb92a22b35bd79bc6d490591406346ecd78342ee3563c4883a8251679691c2d4e963397e24653520795511b018915374c954bddb940a9d7a16d1c8bd798fc7dbfb0599a7074e13f87e14efa8d511bb2579ec029b1bda18fe971b30fbe19e986ff2686a69bf3f1bb929de93ae70345ebca998b11e0a2b41890cba628d8f6e7c4e94790735e5299b4ff07cd3080f7d53c9cbe1911d2cd5925b3213e033c272506a87886cf761a283a779564d3241e3c28f632e166b5d756e1786ce077614c4444e3f2aed5decb3613b925ea3e558c21d4faf8ba54edd0f3a5d4>',
+            '<b 0xc3000000010828cc76e6712c410c000044d0a2465e075ad0f01564ee338a44a2023493b8e15237b38843001050a4f4bf2a2cfb40695fe5ff42a70c0990053428d982902a32ca57e8b98909370223db26cd729039d5717f730c935603e2a1f7e452ebbeb6236f02198a9e5293322ab2895f935827f58ffe0a2ca638599a6218bc847fd5e1c801cd487cfb10d308156e7ce4c91cf522097cab6d079acc9e7ef18f231ee6ac13f7bd3d03db41dc27953d32d1aaa35932add5b567769a35fc7e3ec9175211afba7b945492b7f2e8b141c450585f09eb9c38a760b4f6fd36257830c47bd028f35ac1b00cbf6c59030d67363e28a8a2e70190a23fbcc10941537db75c01b82f8be3d0ba7fd0f9ab534a36dcefff49ecb9a63d3be1f14ab0376d4f9686fa6478816c183f07179778593821b89a035cfa92ec13c5cd2991180278ed125264fb3a512d0480a73d69218aad3477f2c741981da881a0146002435fd1f15a0c38715396ea6989b4275137f52ea5fd771e9dc0f552755062e21c996b36e97850bf70fce2f98d26837585d28219a7a30d0cc910ff04a920bb69c714c0142193f267d917aab11058f197a6a66cd752aff348d334186bf91a69843f3452b953fc732449c58dc8aa4bcac89aa661f90891da751978f17a62f7b8f847f440f7210dd05574dbd78e4feb4ac478f275f4044c7170f74221abdda3b8fc0c129ae35d3fabac349d81ba9042b4782819ea81665d06691195bd9e7abf6f0e065a092811e9ea5b113207ef06de5768ebe62e8ee94ae4beb5bc4f9996c2c70c7d620da7fedbb2b9709a45584b5ae0fdc1f746b4afc7f100bc2888611b46e2ac243e136bb100e9db3022f472aac8801e77d15960a031e3f8fea5cf8f8703bdb1357800adc802b702c547f4e5f75eb4b6e5eb9327876c77dcfb3baf696a276d6779ab337fc1aa0b03222a6acda0b04a4220f77fd04ce14f083445e55ff88260834582531d759683e1b2d8abc885664cfba1f49f9bdcf26fca845fde45a0ca08a90794cf70338f1031c5098664f10e830d5b3437c7c367c8a0faa16d81471111b616b2f710edfcab27f5f1a7a33daa20ea6e8e5dcd624c6d8f2c048543d025eb970a8eb8aa09c8b4d0be42d6426961a624e37366c21b7e6ca24d09aa3e46a03e3dfc09eafd9d213752b2ca903d11626eb672d5dc116507c6cd2e43f59a6c964937cd9d8f1e54b05f4486c780c46a5718a3baedf93a5cd9b374097bc6db16aa272b6e0a935b35c3f721e206804c45ec5b4a4dadfbb28a9bd08d4a1590f05ef21185c00f8ca250fb31fe549845d39b6ced2e64c00ad5dac27d550313ac778a981a8b5ce2290bb2d90a50717f004d66ff122a395bba9fc67d38bfbfd549389622431afd241ce7a0d755e7016ee37ada01b09e51f4f39aa3785cc162726d23ad98e1f6d1f4346bd221b7401334d89c07e1ede4aec076933ae6d39bddef5d76e7d1fe8053fb1aca8c35d61b60648c5a1487365b0ca365c1689d8fbfc2267f24cbf90474c92be350f5e664b01ef1c8538b25296d643ceed009cb5da29c0a451be67ef626237066946379385f9c79276117598cd462ac0221fe93a46034df330144f9ccfc5d8560e8df7b19849cf7d65b79f21d3f05f61496ac7da3ffaf87b14171cb7e959c3e98fdef862f7cbf9eaebae74b1c9b09d102bff1fc82e0cf32c96b4dcc5cba0d7d3555bc8a5c722965af0c0c2f0dbb24ca1cbde23cfcd39ce86ecffe102f48cf657833fe578e5439>'
+        ];
+
         let allGeneratedLinks = []; 
         let currentFilteredLinks = [];
         let currentLang = 'fa';
@@ -1388,6 +1438,8 @@
                 base64OptLabel: "خروجی کلی فایل به صورت فشرده (Base64)",
                 b64PackageTitle: "بسته اشتراک فشرده شده (Base64 Package)",
                 convertBtn: "تبدیل و اعمال تغییرات",
+                minifyJsonBtn: "فشرده‌سازی JSON",
+                minifyJsonResultLabel: "خروجی فشرده‌شده:",
                 resultsTitle: "تعداد کانفیگ پردازش شده:",
                 copyAllBtn: "کپی همه کانفیگ‌ها",
                 copySingleBtn: "کپی لینک",
@@ -1424,6 +1476,8 @@
                 light_option: "سبک (jc=3, jmin=1, jmax=3)",
                 heavy_option: "سنگین (jc=5, jmin=10, jmax=40)",
                 custom_settings: "تنظیمات سفارشی",
+                random_i1: "تصادفی",
+                custom_wg_params: "مقادیر سفارشی (اختیاری)",
                 generate_random: "تولید مقادیر تصادفی",
                 amnezia_params: "پارامترهای آمنزیا ۱.۵",
                 wiresock_params: "پارامترهای Wiresock",
@@ -1491,6 +1545,8 @@
                 base64OptLabel: "Encode final output as Base64",
                 b64PackageTitle: "Base64 Subscription Package",
                 convertBtn: "Convert & Apply",
+                minifyJsonBtn: "Minify JSON",
+                minifyJsonResultLabel: "Minified Output:",
                 resultsTitle: "Processed Configs Count:",
                 copyAllBtn: "Copy All Configs",
                 copySingleBtn: "Copy",
@@ -1527,6 +1583,8 @@
                 light_option: "Light (jc=3, jmin=1, jmax=3)",
                 heavy_option: "Heavy (jc=5, jmin=10, jmax=40)",
                 custom_settings: "Custom Settings",
+                random_i1: "Accidently",
+                custom_wg_params: "Custom Params (Optional)",
                 generate_random: "Generate Random",
                 amnezia_params: "Amnezia 1.5 Parameters",
                 wiresock_params: "Wiresock Parameters",
@@ -1666,6 +1724,40 @@
             document.getElementById('mainInput').value = '';
         }
 
+        // --- Minify / Compact JSON: shown in a separate result box, with its own copy button ---
+        function minifyMainInputJson() {
+            const inputEl = document.getElementById('mainInput');
+            const resultBox = document.getElementById('minifyJsonResultBox');
+            const resultArea = document.getElementById('minifyJsonResultArea');
+            const raw = inputEl.value.trim();
+            if (!raw) {
+                showToast(i18n[currentLang].emptyInput);
+                resultBox.classList.add('hidden');
+                return;
+            }
+            try {
+                const parsed = JSON.parse(raw);
+                resultArea.value = JSON.stringify(parsed);
+                resultBox.classList.remove('hidden');
+                showToast(currentLang === 'fa' ? 'کد JSON با موفقیت فشرده (Minify) شد.' : 'JSON minified successfully.');
+            } catch (err) {
+                resultBox.classList.add('hidden');
+                showToast(currentLang === 'fa' ? 'متن ورودی یک JSON معتبر نیست.' : 'Input text is not valid JSON.');
+            }
+        }
+
+        function copyMinifyJsonResult() {
+            const resultArea = document.getElementById('minifyJsonResultArea');
+            if (!resultArea.value) return;
+            navigator.clipboard.writeText(resultArea.value).then(() => {
+                const btn = document.getElementById('btnCopyMinifyJson');
+                const originalText = btn.innerText;
+                btn.innerText = i18n[currentLang].copied;
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            });
+        }
+        document.getElementById('btnCopyMinifyJson').addEventListener('click', copyMinifyJsonResult);
+
         function updateTitleBarText() {
             const titleEl = document.getElementById('appTitle');
             if (currentActiveApp === 'v2ray') {
@@ -1734,6 +1826,11 @@
             document.getElementById('ws_ib').selectedIndex = 0;
             document.getElementById('clash').checked = true;
             handleWgOptionChange('clash');
+
+            ['custom_wg_address', 'custom_wg_dns', 'custom_wg_mtu', 'custom_wg_allowedips', 'custom_wg_keepalive'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
 
             // Clash/Singbox Reset
             document.getElementById('csSubUrlInput').value = '';
@@ -2298,6 +2395,24 @@
             };
         }
 
+        function randomizeAmneziaI1() {
+            const RandomHex = I1_HEX_LIST[Math.floor(Math.random() * I1_HEX_LIST.length)];
+            document.getElementById('i1_1').value = RandomHex;
+            document.getElementById('i2_1').value = '';
+            document.getElementById('i3_1').value = '';
+            document.getElementById('i4_1').value = '';
+            document.getElementById('i5_1').value = '';
+            
+            document.querySelectorAll('.amnezia15-presets .win98-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('preset-random-i1').classList.add('active');
+            
+            showToast(currentLang === 'fa' ? 'مقدار تصادفی قرار داده شد(هربارکلیک مقدار تصادفی جدید قرار میگیرد).' : 'Random value inserted (with each click a new random value is inserted).');
+            
+            if (document.getElementById('confInput').value.trim()) {
+                convertWireguard();
+            }
+        }
+
         // ── Amnezia 1.5 presets ───────────────────────────────────────────
         const AMNEZIA15_PRESETS = {
             set1: {
@@ -2309,7 +2424,7 @@
                 i2: '', i3: '', i4: '', i5: ''
             },
             set3: {
-                i1: '<b 0x494e56495445207369703a626f624062696c6f78692e636f6d205349502f322e300d0a5669613a205349502f322e302f55445020706333332e61746c616e74612e636f6d3b6272616e63683d7a39684734624b3737366173646864730d0a4d61782d466f7277617264733a2037300d0a546f3a20426f62203c7369703a626f624062696c6f78692e636f6d3e0d0a46726f6d3a20416c696365203c7369703a616c6963654061746c616e74612e636f6d3e3b7461673d313932383330313737340d0a43616c6c2d49443a20613834623463373665363637313040706333332e61746c616e74612e636f6d0d0a435365713a2033313431353920494e564954450d0a436f6e746163743a203c7369703a616c69636540706333332e61746c616e74612e636f6d3e0d0a436f6e74656e742d547970653a206170706c69636174696f6e2f7364700d0a436f6e74656e742d4c656e6774683a20300d0a0d0a>',
+                i1: '<b 0x494e56495445207369703a626f624062696c6f78692e636f6d205349502f322e300d0a5669613a205349502f322e302f55445020706333332e61746c616e74612e636f6d3b6272616e63683d7a39684734624b3737366173646864730d0a4d61782d466f7277617264733a2037300d0a546f3a20426f62203c7369703a626f624062696c6f78692e636f6d3e0d0a46726f6d3a20416c696365203c7369703a616c6963654061746c616e74612e636f6d3e3b7461673d313932383330313737340d0a43616c6c2d49443a20613834623463373665363637313040706333332e61746c616e74612e636f6d0d0a435365713a2033313431353920494e564954450d0a436f6e74656e742d4c656e6774683a20300d0a0d0a>',
                 i2: '<b 0x5349502f322e302031303020547279696e670d0a5669613a205349502f322e302f55445020706333332e61746c616e74612e636f6d3b6272616e63683d7a39684734624b3737366173646864730d0a546f3a20426f62203c7369703a626f624062696c6f78692e636f6d3e0d0a46726f6d3a20416c696365203c7369703a616c6963654061746c616e74612e636f6d3e3b7461673d313932383330313737340d0a43616c6c2d49443a20613834623463373665363637313040706333332e61746c616e74612e636f6d0d0a435365713a2033313431353920494e564954450d0a436f6e74656e742d4c656e6774683a20300d0a0d0a>',
                 i3: '', i4: '', i5: ''
             },
@@ -2489,6 +2604,8 @@
                         peer.amneziaOptions[key] = value;
                     } else if (key === 'presharedkey') {
                         peer.presharedKey = value;
+                    } else if (key === 'persistentkeepalive') {
+                        peer.persistentkeepalive = value;
                     } else {
                         peer[key] = value;
                     }
@@ -2520,6 +2637,20 @@
             const port = peerData.endpoint.slice(colonIdx + 1);
             const dnsList = interfaceData.dns ? interfaceData.dns.split(',').map(d => d.trim()) : [];
             let options = {};
+            
+            // Read Custom Overrides
+            const c_address = document.getElementById('custom_wg_address')?.value.trim();
+            const c_dns = document.getElementById('custom_wg_dns')?.value.trim();
+            const c_mtu = document.getElementById('custom_wg_mtu')?.value.trim();
+            const c_allowedips = document.getElementById('custom_wg_allowedips')?.value.trim();
+            const c_keepalive = document.getElementById('custom_wg_keepalive')?.value.trim();
+
+            const baseAddress = c_address || interfaceData.address;
+            const baseDns = c_dns ? c_dns.split(',').map(d=>d.trim()) : dnsList;
+            const baseMtu = c_mtu ? parseInt(c_mtu) : parseInt(interfaceData.mtu || 1420);
+            const baseAllowedIps = c_allowedips ? c_allowedips.split(',').map(ip => `'${ip.trim()}'`) : (peerData.allowedips ? peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`) : []);
+            const baseKeepalive = c_keepalive || peerData.persistentkeepalive;
+
             if (format === 'wiresocket') {
                 options = generateWiresocketDefaults();
                 options.id = interfaceData.amneziaOptions.id || peerData.amneziaOptions.id || options.id;
@@ -2531,9 +2662,6 @@
                     const v = interfaceData.amneziaOptions[key] || peerData.amneziaOptions[key];
                     if (v) options[key] = v;
                 }
-                // NOTE: jc/jmin/jmax/s1/s2/h1-h4 (AMNEZIA_KEYS) are intentionally NOT
-                // pulled from the original config — the user's selected Light/Heavy/
-                // Custom junk settings above must always take priority.
             }
             let proxyName = peerData.name || fileName.replace('.conf', '');
             const originalName = proxyName;
@@ -2566,10 +2694,16 @@
                 server: server.replace(/^\[|\]$/g, ''),
                 serverRaw: server,
                 port: parseInt(port),
-                ip: interfaceData.address, private_key: interfaceData.privatekey, public_key: peerData.publickey,
+                ip: baseAddress, 
+                private_key: interfaceData.privatekey, 
+                public_key: peerData.publickey,
                 preshared_key: peerData.presharedKey,
-                allowed_ips: peerData.allowedips ? peerData.allowedips.split(',').map(ip => `'${ip.trim()}'`) : [],
-                udp: true, mtu: 1420, remote_dns_resolve: true, dns: dnsList,
+                allowed_ips: baseAllowedIps,
+                udp: true, 
+                mtu: baseMtu, 
+                remote_dns_resolve: true, 
+                dns: baseDns,
+                keepalive: baseKeepalive,
                 isDefaultAmnezia: !(interfaceData.amneziaOptions.jc || peerData.amneziaOptions.jc)
             };
             if (format === 'wiresocket') {
@@ -2647,9 +2781,10 @@
                 `  udp: ${proxy.udp}`,
                 `  mtu: ${proxy.mtu}`,
                 `  remote-dns-resolve: ${proxy.remote_dns_resolve}`,
-                `  dns: [${proxy.dns.join(', ')}]`,
-                generateAmneziaOptionsYAML(proxy['amnezia-options'] || {})
+                `  dns: [${proxy.dns.join(', ')}]`
             );
+            if (proxy.keepalive) parts.push(`  persistent-keepalive: ${proxy.keepalive}`);
+            parts.push(generateAmneziaOptionsYAML(proxy['amnezia-options'] || {}));
             return parts.join('\n');
         }
 
@@ -2696,10 +2831,11 @@
             if (proxy.preshared_key) {
                 configLines.push(`PresharedKey = ${proxy.preshared_key}`);
             }
-            configLines.push(
-                `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
-                `Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`
-            );
+            configLines.push(`AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`);
+            if (proxy.keepalive) {
+                configLines.push(`PersistentKeepalive = ${proxy.keepalive}`);
+            }
+            configLines.push(`Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`);
             return configLines.join('\n');
         }
 
@@ -2744,10 +2880,11 @@
             if (proxy.preshared_key) {
                 configLines.push(`PresharedKey = ${proxy.preshared_key}`);
             }
-            configLines.push(
-                `AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`,
-                `Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`
-            );
+            configLines.push(`AllowedIPs = ${proxy.allowed_ips.join(', ').replace(/'/g, '')}`);
+            if (proxy.keepalive) {
+                configLines.push(`PersistentKeepalive = ${proxy.keepalive}`);
+            }
+            configLines.push(`Endpoint = ${proxy.serverRaw || proxy.server}:${proxy.port}`);
             return configLines.join('\n');
         }
 
@@ -3350,7 +3487,6 @@
                 return {name:nodeName, config};
             }catch(e){ return null; }
         }
-
         function parseVmessLink(link){
             if(!link.startsWith('vmess://')) return null;
             try{
